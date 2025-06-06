@@ -1,5 +1,5 @@
 drop table if exists transactions;
-drop table if exists  user_accounts;
+drop table if exists  wallets;
 
 create table public.user_accounts
 (
@@ -9,12 +9,10 @@ create table public.user_accounts
 );
 
 
-create table transactions
+create table public.wallets
 (
-
-    id      bigint primary key generated always as identity,
-    user_account_id bigint references user_accounts (id) not null,
-    nonce text not null,
-    status_message text not null ,
-    mode text not null
+    id              bigint primary key generated always as identity,
+    user_account_id bigint references user_accounts (id) NOT NULL,
+    currency_type   text,
+    value           bigint
 );

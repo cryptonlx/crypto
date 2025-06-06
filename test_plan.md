@@ -13,14 +13,14 @@ Ensure API test server is ready.
 [US-005] User can view his/her transaction history
 
 - [ ] [T_0001] User Creation
-    - [ ] Get user `USER_ID`
+    - [x] Get user `USER_ID`
         - Endpoint: [API-USER-BAL]
-        - [ ] Error: `ERROR_MESSAGE` = `"USER_NOT_FOUND"`
-        - [ ] Status: 400
-    - [ ] Create user `USER_ID` (same as above)
+        - [x] Error: `ERROR_MESSAGE` = `"resource: user not found"`
+        - [x] Status: 400
+    - [ ] Create user `USERNAME` (same as above)
         - Endpoint: [API-USER-NEW]
         - [ ] Status: 200
-    - [ ] Create duplicate user `USER_ID` (same as above)
+    - [ ] Create duplicate user `USERNAME` (same as above)
         - Endpoint: [API-USER-NEW]
         - [ ] Error: `ERROR_MESSAGE` = `"USER_EXISTS"`
         - [ ] Status: 400
@@ -31,9 +31,9 @@ Ensure API test server is ready.
 - [ ] [T_0002] - Get User Balance\
   User Stories: [US-004], [US-005]
     - [ ] Non-existing user `USER_ID`
-        - [ ] 404: `ERROR_MESSAGE` = `"USER NOT FOUND"`\
+        - [ ] 404: `ERROR_MESSAGE` = `"resource: user not found"`\
           Endpoint: [API-USER-BAL]
-        - [ ] 404: `ERROR_MESSAGE` = `"USER NOT FOUND"`\
+        - [ ] 404: `ERROR_MESSAGE` = `"resource: user not found"`\
           Endpoint: [API-USER-HST]
     - [ ] Create user `USER_ID` (same as above)
         - [ ] 200

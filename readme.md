@@ -46,11 +46,11 @@ The tests are end-to-end and will require external connections (db etc.).
 
     - IDEMPOTENT. See [Resource Modification](#resource-modification)
     - currency type of wallets must match.
-4. **[API-USER-BAL]** Get wallet balances of user.
+4. **[API-USER-BAL]** Get balances of user's wallets.
 
-    `/GET /user/balances`
+    `/GET /user/balance`
 
-5. **[API-USER-HST]** Get specify user transaction history
+5. **[API-USER-HST]** Get user's transaction history
 
     `/GET /user/transactions`
 
@@ -74,6 +74,7 @@ The tests are end-to-end and will require external connections (db etc.).
 - Each user can have multiple wallets. A user cannot have two wallets of same currency.
 - Supports deposit and withdrawal.
 - Supports transfer from/to wallets.
+- Enable viewing of wallet balance and transaction history.
 
 ### Non-functional requirements
 
@@ -105,3 +106,5 @@ The tests are end-to-end and will require external connections (db etc.).
 - Security
   - User authentication via token issuance or session.
   - Request authentication via payload signing.
+- Observability
+  - Request tracing and logging for easy debugging.

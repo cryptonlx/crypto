@@ -1,0 +1,65 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/user/{user_id}/balance": {
+            "get": {
+                "description": "Get balances of user's wallets.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get balances of user's wallets.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "username",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.GetUserWalletBalanceResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "user.ErrorResponse": {
+            "type": "object"
+        },
+        "user.GetUserBalanceResponseData": {
+            "type": "object"
+        },
+        "user.GetUserWalletBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/user.GetUserBalanceResponseData"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
