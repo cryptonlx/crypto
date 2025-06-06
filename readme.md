@@ -34,17 +34,17 @@ The tests are end-to-end and will require external connections (db etc.).
 
     `/POST /wallet/deposit`
 
-    - See [Wallet Idempotency](#resource-modification)
+    - See [Wallet Idempotency](#wallet-idempotency)
 2. **[API-WALL-WDR]** Withdraw user's wallet
 
     `/POST /wallet/withdrawal`
 
-    - See [Wallet Idempotency](#resource-modification)
+    - See [Wallet Idempotency](#wallet-idempotency)
 3. **[API-WALL-TRF]** Transfer from one user's account to another user's account.
 
     `/POST /wallet/transfer`
 
-    - See [Wallet Idempotency](#resource-modification)
+    - See [Wallet Idempotency](#wallet-idempotency)
     - currency type of wallets must match.
 4. **[API-WALL-BAL]** Get balances of user's wallets.
 
@@ -59,6 +59,9 @@ The tests are end-to-end and will require external connections (db etc.).
    `/POST /user`
 
     Fails on conflict with existing user. User identification by `request.username`.
+7. **[API-WALL-NEW]** Create new wallet for user.
+
+    `/POST /wallet`
 
 ### Glossary
 
@@ -70,7 +73,7 @@ The tests are end-to-end and will require external connections (db etc.).
 ### Functional Requirements
 
 - Create new user if not exists.
-- Each user can have multiple wallets. A user cannot have two wallets of same currency.
+- Each user can have multiple wallets.
 - Supports deposit and withdrawal.
 - Supports transfer from/to wallets.
 - Enable viewing of wallet balance and transaction history.
@@ -85,13 +88,12 @@ The tests are end-to-end and will require external connections (db etc.).
 #### Atomicity
 - Operations should be atomic and serialized across affected tables to ensure data integrity.
 
-### Things to Improve on (Current and Future Scope)
+### Things to Improve on (Future Scope)
 - Testing
-  - Can add table-driven unit tests for more confidence.
+  - Can add table-driven unit tests to test in isolation for more confidence.
 - Scalability
   - Consider service availability/maintainability for massive operations.
-    - Upgrade in-mem cache to Redis so that server is stateless.
-    - Set rate limiting per endpoint basis to stabilise server.
+    - Set rate limiting per endpoint basis to stabilise server. Can use Redis to store rate limiter's state a server cluster.
   - Support for asynchronous services.
     - For example, notify on operation fail/success, balance change etc.
 - Payload selection
@@ -99,11 +101,11 @@ The tests are end-to-end and will require external connections (db etc.).
 - Greater API Flexibility
   - Currency Value and Unit Type
     - Support for cross-currency transfer.
-    - Decide on better value type assignment in PostgreSQL. There are a few options to choose from:
+    - Decide on better value type assignment in PostgreSQL for accuracy. There are a few options to choose from:
       - Multiply value by 1000x and store as `bigint`.
       - Store as floating point.
       - Store as `money`.
-  - Conversion and Broker Fees Calculation (Effective Transaction Value)
+  - Conversion and Broker Fees Calculation for Effective Transaction Value)
 - Security
   - User authentication via token issuance or session.
   - Request authentication via payload signing.

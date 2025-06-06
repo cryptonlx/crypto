@@ -1,8 +1,31 @@
 definitions:
-  user.CreateRequestBody:
+  github_com_cryptonlx_crypto_src_controller_mux_user.User:
+    properties:
+      id:
+        example: 1
+        type: integer
+      username:
+        example: user1
+        type: string
+    type: object
+  github_com_cryptonlx_crypto_src_controller_mux_user.Wallet:
+    properties:
+      currency:
+        example: USD
+        type: string
+      id:
+        example: 1
+        type: integer
+      user_account_id:
+        example: 1
+        type: integer
+      value:
+        example: "10.000123"
+        type: string
+    type: object
+  user.CreateUserRequestBody:
     properties:
       username:
-        description: Subreddit Name
         type: string
     type: object
   user.CreateUserResponse:
@@ -17,6 +40,25 @@ definitions:
       user:
         $ref: '#/definitions/user.CreatedUser'
     type: object
+  user.CreateWalletRequestBody:
+    properties:
+      currency:
+        type: string
+      username:
+        type: string
+    type: object
+  user.CreateWalletResponse:
+    properties:
+      data:
+        $ref: '#/definitions/user.CreateWalletResponseData'
+      error:
+        type: string
+    type: object
+  user.CreateWalletResponseData:
+    properties:
+      wallet:
+        $ref: '#/definitions/user.CreatedWallet'
+    type: object
   user.CreatedUser:
     properties:
       id:
@@ -26,23 +68,47 @@ definitions:
         example: user1
         type: string
     type: object
-  user.ErrorResponse:
+  user.CreatedWallet:
+    properties:
+      currency:
+        example: USD
+        type: string
+      id:
+        example: 1
+        type: integer
+      user_account_id:
+        example: 1
+        type: integer
+      username:
+        example: user1
+        type: string
     type: object
-  user.GetUserBalanceResponseData:
+  user.ErrorResponse:
     type: object
   user.GetUserTransactionsResponse:
     properties:
       data:
-        $ref: '#/definitions/user.GetUserBalanceResponseData'
+        $ref: '#/definitions/user.GetUserTransactionsResponseData'
       error:
         type: string
+    type: object
+  user.GetUserTransactionsResponseData:
     type: object
   user.GetUserWalletBalanceResponse:
     properties:
       data:
-        $ref: '#/definitions/user.GetUserBalanceResponseData'
+        $ref: '#/definitions/user.GetWalletBalanceResponseData'
       error:
         type: string
+    type: object
+  user.GetWalletBalanceResponseData:
+    properties:
+      user:
+        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User'
+      wallets:
+        items:
+          $ref: '#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.Wallet'
+        type: array
     type: object
 info:
   contact: {}
@@ -53,12 +119,12 @@ paths:
       - application/json
       description: Create a new user.
       parameters:
-      - description: Create Request Body
+      - description: Create User Request Body
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/user.CreateRequestBody'
+          $ref: '#/definitions/user.CreateUserRequestBody'
       produces:
       - application/json
       responses:
@@ -121,6 +187,32 @@ paths:
           schema:
             $ref: '#/definitions/user.ErrorResponse'
       summary: Get transactions of user's wallets.
+      tags:
+      - wallet
+  /wallet:
+    post:
+      consumes:
+      - application/json
+      description: Create a new wallet for user.
+      parameters:
+      - description: Create Wallet Request Body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateWalletRequestBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.CreateWalletResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+      summary: Create a new wallet for user.
       tags:
       - wallet
 swagger: "2.0"

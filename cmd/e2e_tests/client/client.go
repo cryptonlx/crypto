@@ -1,7 +1,6 @@
 package client
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,11 +17,24 @@ func NewClient(serverUrl string) (*Client, error) {
 	}, nil
 }
 
-type WalletBalanceResponseBody struct {
-	Error *string `json:"error"`
+type Wallet struct {
+	Id            int64  `json:"id"`
+	UserAccountId int64  `json:"user_account_id"`
+	Currency      string `json:"currency"`
+	Value         string `json:"value"`
 }
 
-func (c *Client) GetWalletBalance(username string) (WalletBalanceResponseBody, int, error) {
+type WalletBalanceResponseData struct {
+	WalletBalances []Wallet `json:"wallets"`
+	User           `json:"user"`
+}
+
+type WalletBalanceResponseBody struct {
+	Error *string                   `json:"error"`
+	Data  WalletBalanceResponseData `json:"data"`
+}
+
+func (c *Client) GetWalletBalances(username string) (WalletBalanceResponseBody, int, error) {
 	if username == "" {
 		return WalletBalanceResponseBody{}, 0, fmt.Errorf("malformedclient request. abort sending")
 	}
@@ -60,13 +72,10 @@ type CreatedUser struct {
 }
 
 type CreateUserResponseData struct {
-	CreatedUser `json:"user"`
+	*CreatedUser `json:"user"`
 }
 
-type CreateUserResponseBody struct {
-	Error *string                `json:"error"`
-	Data  CreateUserResponseData `json:"data"`
-}
+type CreateUserResponseBody = ResponseBody[CreateUserResponseData]
 
 func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error) {
 	baseUrl := c.serverUrl + "/user"
@@ -75,37 +84,7 @@ func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error
 		"username": username,
 	}
 
-	bb, err := json.Marshal(requestBody)
-	if err != nil {
-		return CreateUserResponseBody{}, 0, err
-	}
-
-	fullURL := baseUrl
-	resp, err := http.Post(fullURL, "application/json", bytes.NewBuffer(bb))
-	if err != nil {
-		return CreateUserResponseBody{}, 0, err
-	}
-	defer resp.Body.Close()
-
-	//log.Printf("resp.StatusCode: %v\n", resp.StatusCode)
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return CreateUserResponseBody{}, 0, err
-	}
-
-	//log.Printf("Body: %s\n", string(body))
-
-	var b CreateUserResponseBody
-	err = json.Unmarshal(body, &b)
-	if err != nil {
-		return CreateUserResponseBody{}, 0, fmt.Errorf("response body: %s %v", string(body), err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("%s", *b.Error)
-	}
-	return b, resp.StatusCode, err
+	return httpPost[CreateUserResponseBody](baseUrl, requestBody)
 }
 
 type Transaction struct{}
@@ -119,15 +98,15 @@ type TransactionResponseBody struct {
 	Data  TransactionResponseBodyData `json:"data"`
 }
 
-func (c *Client) GetTransactionHistory(username string) (WalletBalanceResponseBody, int, error) {
+func (c *Client) GetTransactionHistory(username string) (TransactionResponseBody, int, error) {
 	if username == "" {
-		return WalletBalanceResponseBody{}, 0, fmt.Errorf("malformedclient request. abort sending")
+		return TransactionResponseBody{}, 0, fmt.Errorf("malformedclient request. abort sending")
 	}
 	baseUrl := c.serverUrl + "/user/" + username + "/transactions"
 
 	resp, err := http.Get(baseUrl)
 	if err != nil {
-		return WalletBalanceResponseBody{}, 0, err
+		return TransactionResponseBody{}, 0, err
 	}
 	defer resp.Body.Close()
 
@@ -136,17 +115,58 @@ func (c *Client) GetTransactionHistory(username string) (WalletBalanceResponseBo
 	//log.Println(string(body))
 	//log.Println(resp.StatusCode)
 	if err != nil {
-		return WalletBalanceResponseBody{}, 0, err
+		return TransactionResponseBody{}, 0, err
 	}
 
-	var b WalletBalanceResponseBody
+	var b TransactionResponseBody
 	err = json.Unmarshal(body, &b)
 	if err != nil {
-		return WalletBalanceResponseBody{}, 0, err
+		return TransactionResponseBody{}, 0, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("%s", *b.Error)
 	}
 	return b, resp.StatusCode, err
+}
+
+type User struct {
+	Username string `json:"username" example:"tester_123"`
+	Id       int64  `json:"id" example:"1"`
+}
+
+type DepositResponseData struct {
+	User `json:"user"`
+}
+
+type DepositResponseBody = ResponseBody[DepositResponseData]
+
+func (c *Client) Deposit(username string, amount int64) (DepositResponseBody, int, error) {
+	baseUrl := c.serverUrl + "/user"
+	requestBody := map[string]interface{}{
+		"username": username,
+	}
+	return httpPost[DepositResponseBody](baseUrl, requestBody)
+}
+
+type ResponseBody[T any] struct {
+	Error *string `json:"error"`
+	Data  T       `json:"data"`
+}
+
+type CreateWalletResponseData struct {
+	Wallet *struct {
+		Id int64 `json:"id"`
+	} `json:"wallet"`
+}
+
+type CreateWalletResponseBody = ResponseBody[CreateWalletResponseData]
+
+func (c *Client) CreateWallet(username string, currency string) (CreateWalletResponseBody, int, error) {
+	baseUrl := c.serverUrl + "/wallet"
+	requestBody := map[string]interface{}{
+		"username": username,
+		"currency": currency,
+	}
+	return httpPost[CreateWalletResponseBody](baseUrl, requestBody)
 }

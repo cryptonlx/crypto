@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/cryptonlx/crypto/src/repositories/utils"
 
@@ -74,11 +75,28 @@ func (r *Repo) createUser(ctx context.Context, tx pgx.Tx, username string) (User
 	return user, nil
 }
 
+func (r *Repo) createWallet(ctx context.Context, tx pgx.Tx, username int64, currency CurrencyType) (Wallet, error) {
+	row := tx.QueryRow(ctx, "insert into wallets(user_account_id, currency, value) VALUES ($1,$2,$3) RETURNING id, user_account_id, currency, value", username, currency, "0")
+
+	var wallet Wallet
+	err := row.Scan(&wallet.Id, &wallet.UserAccountId, &wallet.Currency, &wallet.Value)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			err = utils.ToError(pgErr)
+		}
+		return Wallet{}, err
+	}
+
+	return wallet, nil
+}
+
 func (r *Repo) getWalletsByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]Wallet, error) {
 	if tx == nil {
 		return []Wallet{}, utils.NilTxError
 	}
-	rows, err := tx.Query(ctx, "select id, user_account_id, currency_type, value from wallets where user_account_id=$1", userId)
+
+	rows, err := tx.Query(ctx, "select id, user_account_id, currency, value from wallets where user_account_id=$1", userId)
 	if err != nil {
 		return []Wallet{}, err
 	}
@@ -87,12 +105,15 @@ func (r *Repo) getWalletsByUserId(ctx context.Context, tx pgx.Tx, userId int64) 
 	var wallets []Wallet
 	for rows.Next() {
 		var t Wallet
-		rows.Scan(&t.Id, &t.CurrencyType, &t.Value)
+		rows.Scan(&t.Id, &t.UserAccountId, &t.Currency, &t.Value)
 		if err := rows.Err(); err != nil {
 			return []Wallet{}, err
 		}
 		wallets = append(wallets, t)
 	}
+
+	log.Printf("%d l%d", userId, len(wallets))
+
 	return wallets, nil
 }
 
@@ -102,7 +123,7 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 	if tx == nil {
 		return []Transaction{}, utils.NilTxError
 	}
-	rows, err := tx.Query(ctx, "select id, user_account_id, currency_type, value from wallets where user_account_id=$1", userId)
+	rows, err := tx.Query(ctx, "select id, user_account_id, currency, value from wallets where user_account_id=$1", userId)
 	if err != nil {
 		return []Transaction{}, err
 	}
@@ -120,14 +141,11 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 	return transactions, nil
 }
 
-type CurrencyType = string
-
-const CurrencyTypeUSD CurrencyType = "USD"
-
 type Wallet struct {
-	Id           int64
-	CurrencyType string
-	Value        int64
+	Id            int64
+	UserAccountId int64
+	Currency      string
+	Value         string
 }
 
 type WalletBalances struct {
@@ -204,4 +222,33 @@ func (r *Repo) CreateUser(ctx context.Context, username string) (User, error) {
 
 	tx.Commit(ctx)
 	return user, nil
+}
+
+// CurrencyType
+// Subset of ISO4217
+type CurrencyType string
+
+const CurrencyTypeUSD CurrencyType = "USD"
+const CurrencyTypeSGD CurrencyType = "SGD"
+
+func (r *Repo) CreateWallet(ctx context.Context, username string, currency CurrencyType) (Wallet, error) {
+	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.ReadCommitted,
+	})
+	if err != nil {
+		return Wallet{}, err
+	}
+	defer tx.Rollback(ctx)
+	user, err := r.getUser(ctx, tx, username)
+	if err != nil {
+		return Wallet{}, err
+	}
+
+	wallet, err := r.createWallet(ctx, tx, user.Id, currency)
+	if err != nil {
+		return Wallet{}, err
+	}
+
+	tx.Commit(ctx)
+	return wallet, nil
 }

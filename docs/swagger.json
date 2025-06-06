@@ -19,12 +19,12 @@
                 "summary": "Create a new user.",
                 "parameters": [
                     {
-                        "description": "Create Request Body",
+                        "description": "Create User Request Body",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/user.CreateRequestBody"
+                            "$ref": "#/definitions/user.CreateUserRequestBody"
                         }
                     }
                 ],
@@ -119,14 +119,87 @@
                     }
                 }
             }
+        },
+        "/wallet": {
+            "post": {
+                "description": "Create a new wallet for user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallet"
+                ],
+                "summary": "Create a new wallet for user.",
+                "parameters": [
+                    {
+                        "description": "Create Wallet Request Body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.CreateWalletRequestBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.CreateWalletResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "user.CreateRequestBody": {
+        "github_com_cryptonlx_crypto_src_controller_mux_user.User": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "username": {
+                    "type": "string",
+                    "example": "user1"
+                }
+            }
+        },
+        "github_com_cryptonlx_crypto_src_controller_mux_user.Wallet": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string",
+                    "example": "USD"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "user_account_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "value": {
+                    "type": "string",
+                    "example": "10.000123"
+                }
+            }
+        },
+        "user.CreateUserRequestBody": {
             "type": "object",
             "properties": {
                 "username": {
-                    "description": "Subreddit Name",
                     "type": "string"
                 }
             }
@@ -150,6 +223,36 @@
                 }
             }
         },
+        "user.CreateWalletRequestBody": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.CreateWalletResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/user.CreateWalletResponseData"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.CreateWalletResponseData": {
+            "type": "object",
+            "properties": {
+                "wallet": {
+                    "$ref": "#/definitions/user.CreatedWallet"
+                }
+            }
+        },
         "user.CreatedUser": {
             "type": "object",
             "properties": {
@@ -163,31 +266,66 @@
                 }
             }
         },
-        "user.ErrorResponse": {
-            "type": "object"
+        "user.CreatedWallet": {
+            "type": "object",
+            "properties": {
+                "currency": {
+                    "type": "string",
+                    "example": "USD"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "user_account_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "username": {
+                    "type": "string",
+                    "example": "user1"
+                }
+            }
         },
-        "user.GetUserBalanceResponseData": {
+        "user.ErrorResponse": {
             "type": "object"
         },
         "user.GetUserTransactionsResponse": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/user.GetUserBalanceResponseData"
+                    "$ref": "#/definitions/user.GetUserTransactionsResponseData"
                 },
                 "error": {
                     "type": "string"
                 }
             }
         },
+        "user.GetUserTransactionsResponseData": {
+            "type": "object"
+        },
         "user.GetUserWalletBalanceResponse": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/user.GetUserBalanceResponseData"
+                    "$ref": "#/definitions/user.GetWalletBalanceResponseData"
                 },
                 "error": {
                     "type": "string"
+                }
+            }
+        },
+        "user.GetWalletBalanceResponseData": {
+            "type": "object",
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User"
+                },
+                "wallets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.Wallet"
+                    }
                 }
             }
         }

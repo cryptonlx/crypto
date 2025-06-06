@@ -14,7 +14,7 @@ Ensure API test server is ready.
 
 - [ ] [T_0001] User Creation\
   User Stories: [US-004]\
-  Test exist by get balance endpoint.
+  Test if user exist by get balance endpoint.
     - [x] [T_0001_001] Get user by `username` yet to be created.
         - Endpoint: [API-WALL-BAL]
         - [x] Status: 400
@@ -45,33 +45,51 @@ Ensure API test server is ready.
         - [x] Result: []
 
 
-- [ ] [T_0003] - Deposit Negative Amount Should Fail\
+- [x] [T_0003] - Wallet Creation \
+  User Stories: [US-005]
+    - [x] [T_0003_001] Create user with `username`
+        - Endpoint: [API-USER-NEW]
+        - [x] Status: 200
+    - [x] [T_0003_002] Get Balance
+        - Endpoint: [API-WALL-BAL]
+        - [x] Status: 200
+        - [x] Result: []
+    - [x] [T_0003_003] Create `SGD` wallet
+        - [x] Status: 200
+        - [x] Result: `response.wallet.id` != 0
+    - [x] [T_0003_004] Get Balance
+        - Endpoint: [API-WALL-BAL]
+        - [x] Status: 200
+        - [x] Result: `response.wallets.len` == 1
+        - [x] Result: `response.wallets.currency` == `SGD`
+
+- [ ] [T_0004] - New User: Deposit Negative Amount Should Fail\
   User Stories: [US-001], [US-005]
-    - [ ] [T_0003_001] Create user with `username`
+    - [ ] [T_0004_001] Create user with `username`
         - Endpoint: [API-USER-NEW]
         - [ ] Status: 200
-    - [ ] [T_0003_002] Get History
+    - [ ] [T_0004_002] Get History
         - Endpoint: [API-WALL-HST]
         - [ ] Status: 200
         - [ ] Result: []
-    - [ ] [T_0003_002] Get Balance
+    - [ ] [T_0004_002] Get Balance
         - Endpoint: [API-WALL-BAL]
         - [ ] Status: 200
         - [ ] Result: `before.balance`
-    - [ ] [T_0003_003] Deposit `amount` less than or equals to 0
+    - [ ] [T_0004_003] Deposit `amount` less than or equals to 0
         - Endpoint: [API-USER-DEP]
         - [ ] Status: 400
         - [ ] Error Message = `"invalid_amount"`
-    - [ ] [T_0003_002] Get Balance
+    - [ ] [T_0004_002] Get Balance
         - Endpoint: [API-WALL-BAL]
         - [ ] Status: 200
         - [ ] Result: `after.balance`
         - [ ] Assert: `before.balance` == `after.balance`
-    - [ ] [T_0003_002] Get History
+    - [ ] [T_0004_002] Get History
         - Endpoint: [API-WALL-HST]
         - [ ] Status: 200
-        - [ ] Result: [`transaction::deposit`]
-- [ ] [T_0004_001] - Withdraw Fail \
+        - [ ] Result: [`transaction::deposit::error`]
+- [ ] [T_0005_001] - Withdraw Fail \
   User Stories: [US-002], [US-005]
     - [ ] New User `USER_ID`
         - [ ] 200
@@ -88,7 +106,7 @@ Ensure API test server is ready.
         - [ ] 200:Get history = [`WITHDRAW (FAIL)`]\
           Endpoint: [API-WALL-HST]
 
-- [ ] [T_0004_002] - Withdraw Success \
+- [ ] [T_0005_002] - Withdraw Success \
   User Stories: [US-002], [US-005]
     - [ ] User `USER_ID`
         - [ ] Withdraw From Sufficient Balance \

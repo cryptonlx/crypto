@@ -41,6 +41,7 @@ func main() {
 	mux.HandleFunc("GET /user/{username}/balance", taskHandlers.GetWalletBalances)
 	mux.HandleFunc("GET /user/{username}/transactions", taskHandlers.GetWalletTransactions)
 	mux.HandleFunc("POST /user", taskHandlers.CreateUser)
+	mux.HandleFunc("POST /wallet", taskHandlers.CreateWallet)
 
 	go func() {
 		log.Println("Listening on " + configParams.ServerParams.Port)

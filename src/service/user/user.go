@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+
 	userrepo "github.com/cryptonlx/crypto/src/repositories/user"
 )
 
@@ -19,11 +20,11 @@ func (s Service) GetUserWalletBalanceByUserName(ctx context.Context, username st
 		return userrepo.WalletBalances{}, errors.New("user id cannot be empty")
 	}
 
-	userBalance, err := s.repo.WalletBalances(ctx, username)
+	walletBalances, err := s.repo.WalletBalances(ctx, username)
 	if err != nil {
 		return userrepo.WalletBalances{}, err
 	}
-	return userBalance, nil
+	return walletBalances, nil
 }
 
 func (s Service) GetUserTransactionsByUserName(ctx context.Context, username string) (userrepo.UserTransactions, error) {
@@ -48,4 +49,17 @@ func (s Service) CreateUser(ctx context.Context, username string) (userrepo.User
 		return userrepo.User{}, err
 	}
 	return user, nil
+}
+
+func (s Service) CreateWallet(ctx context.Context, username string, _currency string) (userrepo.Wallet, error) {
+	if username == "" {
+		return userrepo.Wallet{}, errors.New("user name cannot be empty")
+	}
+	currency := userrepo.CurrencyType(_currency)
+
+	wallet, err := s.repo.CreateWallet(ctx, username, currency)
+	if err != nil {
+		return userrepo.Wallet{}, err
+	}
+	return wallet, nil
 }
