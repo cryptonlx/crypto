@@ -25,48 +25,67 @@ The tests are end-to-end and will require external connections (db etc.).
 
 - Understand requirements.
 - Create [Test Plan](./test_plan.md).
-- Create API Contract.
-- Write failing test cases. Implement controller, application logic and database layer. Verify and refine.
+- Write failing test cases iteratively.
+  - Implement controller, application logic and database layer.
+  - Verify, refine and update API contract.
 
 # API Endpoints
-1. **[API-USER-DEP]** Deposit to specify user wallet
+1. **[API-WALL-DEP]** Deposit user's wallet
 
-    `/POST /user/deposit_intent`
+    `/POST /wallet/deposit`
 
-    - IDEMPOTENT. See [Wallet Modification](#wallet-modification)
-2. **[API-USER-WDR]** Withdraw from specify user wallet
+    - IDEMPOTENT. See [Resource Modification](#wallet-modification)
+2. **[API-WALL-WDR]** Withdraw user's wallet
 
-    `/POST /user/withdrawal`
+    `/POST /wallet/withdrawal`
 
-    - IDEMPOTENT. See [Wallet Modification](#wallet-modification)
-3. **[API-USER-TRF]** Transfer from one user to another user
+    - IDEMPOTENT. See [Resource Modification](#wallet-modification)
+3. **[API-WALL-TRF]** Transfer from one user's account to another user's account.
 
-    `/POST /user/transfer`
+    `/POST /wallet/transfer`
 
-    - IDEMPOTENT. See [Wallet Modification](#wallet-modification)
-4. **[API-USER-BAL]** Get specify user balance
+    - IDEMPOTENT. See [Resource Modification](#wallet-modification)
+    - Target wallet's currency must match source's wallet.
+4. **[API-USER-BAL]** Get specify user balances
 
-    `/GET /user`
+    `/GET /user/balances`
 
 5. **[API-USER-HST]** Get specify user transaction history
 
-    `/GET /user/wallet_history`
+    `/GET /user/transactions`
 
-### Functional requirements
+6. **[API-USER-NEW]** Create new user
+
+   `/POST /user`
+
+    Fails on conflict with existing user. User identification by `request.user_id`.
+
+### Functional Requirements
+
+#### Glossary
+
+- User: an account that can own wallets.
+- Wallet: Value store of a currency owned by a User.
+
+### Requirements
+- Create new user if not exists.
+- Each user can have multiple wallets.
+- Supports deposit and withdrawal.
+- Supports transfer from/to wallets.
 
 ### Non-functional requirements
 
-#### Wallet Modification
-- Idempotency for wallet modification requests.
-  - Request will require a nonce field as timestamp id that is applicable. Requests with same nonce will be treated as duplicitous.
+#### Resource Modification
+- Idempotency for modification requests.
+  - Requests will require a timestamp id as nonce field that is applicable. Requests with same nonce will be treated as duplicitous.
   - There will be no operation retries.
-    - For example, user request (nonce:`001`) deposit of $50. Outcome must be success or failure (subsequent request will receive the same response).
+    - For example, new request (nonce:`001`) deposit of $50. Outcome must be success or failure (subsequent request will receive the same response).
       - If success, return status: `SUCCESS`.
       - If fail, return status: `ERROR_MESSAGE`.
-      - To retry, send another user request (nonce:`002`).
+      - To retry, send another request (nonce:`002`).
 
+#### Atomicity
 - Operations should be atomic and serialized across affected tables to ensure data integrity.
-- A response will be sent to indicate if an operation failed or successful.
 
 ### Things to Improve on (Current and Future Scope)
 - Scalability
@@ -79,7 +98,7 @@ The tests are end-to-end and will require external connections (db etc.).
   - List responses should have pagination parameters to return subset as result.
 - Greater API Flexibility
   - Currency Value and Unit Type
-    - Support for multi currency type.
+    - Support for cross-currency transfer.
     - Decide on value type assignment in PostgreSQL. There are a few options to choose from:
       - Multiply value by 1000x and store as `bigint`.
       - Store as floating point.
