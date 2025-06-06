@@ -13,48 +13,59 @@ Ensure API test server is ready.
 [US-005] User can view his/her transaction history
 
 - [ ] [T_0001] User Creation
-    - [x] [T_0001_001] Get user by `username`
+  User Stories: [US-004]
+    - [x] [T_0001_001] Get user by `username` yet to be created.
         - Endpoint: [API-USER-BAL]
-        - [x] Error: `ERROR_MESSAGE` = `"resource: user not found"`
         - [x] Status: 400
+        - [x] Error Message = `"resource: user not found"`
     - [x] [T_0001_002] Create user with `username`
         - Endpoint: [API-USER-NEW]
         - [x] Status: 200
     - [x] [T_0001_003] Create duplicate user `username` (same as above)
         - Endpoint: [API-USER-NEW]
-        - [x] Error: `ERROR_MESSAGE` = `"unique_violation"`
         - [x] Status: 400
+        - [x] Error Message = `"unique_violation"`
     - [x] [T_0001_004] Get existing user `username` (same as above)
         - Endpoint: [API-USER-BAL]
-        - Status: 200
+        - [x] Status: 200
 
-- [ ] [T_0002] - Get User Balance\
-  User Stories: [US-004], [US-005]
-    - [ ] Non-existing user `USER_ID`
-        - [ ] 404: `ERROR_MESSAGE` = `"resource: user not found"`\
-          Endpoint: [API-USER-BAL]
-        - [ ] 404: `ERROR_MESSAGE` = `"resource: user not found"`\
-          Endpoint: [API-USER-HST]
-    - [ ] Create user `USER_ID` (same as above)
-        - [ ] 200
-          Endpoint: [API-USER-NEW]
-        - [ ] 404: Get balance of 0\
-          Endpoint: [API-USER-BAL]
-        - [ ] 200: Get history = []\
-          Endpoint: [API-USER-HST]
+- [ ] [T_0002] - Get User History\
+  User Stories: [US-005]
+    - [ ] [T_0002_001] Create user with `username`
+        - Endpoint: [API-USER-NEW]
+        - [ ] Status: 200
+    - [ ] [T_0002_002] Get History
+        - Endpoint: [API-USER-HST]
+        - [ ] Status: 200
+        - [ ] Result: []
 
-- [ ] [T_0003] - Deposit\
+
+- [ ] [T_0003] - Deposit Negative Amount Should Fail\
   User Stories: [US-001], [US-005]
-    - [ ] New User `username`
-        - [ ] 200
-          Endpoint: [API-USER-NEW]
-        - [ ] 400 Deposit `amount`=negative value, `nonce`=ts\
-          Endpoint: [API-WALL-DEP]
-            - `NEGATIVE VALUE`
-        - [ ] Get balance Assert `NEW_BALANCE` = `CURRENT_BALANCE` + `AMOUNT`
-        - [ ] Get history = [`Deposit`]\
-          Endpoint: [API-USER-HST]
-
+    - [ ] [T_0003_001] Create user with `username`
+        - Endpoint: [API-USER-NEW]
+        - [ ] Status: 200
+    - [ ] [T_0003_002] Get History
+        - Endpoint: [API-USER-HST]
+        - [ ] Status: 200
+        - [ ] Result: []
+    - [ ] [T_0003_002] Get Balance
+        - Endpoint: [API-USER-BAL]
+        - [ ] Status: 200
+        - [ ] Result: `before.balance`
+    - [ ] [T_0003_003] Deposit `amount` less than or equals to 0
+        - Endpoint: [API-USER-DEP]
+        - [ ] Status: 400
+        - [ ] Error Message = `"invalid_amount"`
+    - [ ] [T_0003_002] Get Balance
+        - Endpoint: [API-USER-BAL]
+        - [ ] Status: 200
+        - [ ] Result: `after.balance`
+        - [ ] Assert: `before.balance` == `after.balance`
+    - [ ] [T_0003_002] Get History
+        - Endpoint: [API-USER-HST]
+        - [ ] Status: 200
+        - [ ] Result: [`transaction::deposit`]
 - [ ] [T_0004_001] - Withdraw Fail \
   User Stories: [US-002], [US-005]
     - [ ] New User `USER_ID`
