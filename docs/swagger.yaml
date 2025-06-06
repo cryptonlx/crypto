@@ -1,13 +1,4 @@
 definitions:
-  github_com_cryptonlx_crypto_src_controller_mux_user.User:
-    properties:
-      id:
-        example: 1
-        type: integer
-      username:
-        example: user1
-        type: string
-    type: object
   user.CreateRequestBody:
     properties:
       username:
@@ -24,11 +15,27 @@ definitions:
   user.CreateUserResponseData:
     properties:
       user:
-        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User'
+        $ref: '#/definitions/user.CreatedUser'
+    type: object
+  user.CreatedUser:
+    properties:
+      id:
+        example: 1
+        type: integer
+      username:
+        example: user1
+        type: string
     type: object
   user.ErrorResponse:
     type: object
   user.GetUserBalanceResponseData:
+    type: object
+  user.GetUserTransactionsResponse:
+    properties:
+      data:
+        $ref: '#/definitions/user.GetUserBalanceResponseData'
+      error:
+        type: string
     type: object
   user.GetUserWalletBalanceResponse:
     properties:
@@ -89,6 +96,31 @@ paths:
           schema:
             $ref: '#/definitions/user.ErrorResponse'
       summary: Get balances of user's wallets.
+      tags:
+      - wallet
+  /user/{username}/transactions:
+    get:
+      consumes:
+      - application/json
+      description: Get transactions of user's wallets.
+      parameters:
+      - description: username
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.GetUserTransactionsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+      summary: Get transactions of user's wallets.
       tags:
       - wallet
 swagger: "2.0"

@@ -21,15 +21,12 @@ func NewHandlers(service *userservice.Service) *Handlers {
 }
 
 type GetUserBalanceResponseData struct {
-	walletBalances userrepo.UserBalance `json:"wallet_balances"`
+	walletBalances userrepo.WalletBalances `json:"wallet_balances"`
 }
 
-type User struct {
-	Id       int64  `json:"id" example:"1"`
-	Username string `json:"username" example:"user1"`
-}
+type GetUserWalletBalanceResponse = Response[GetUserBalanceResponseData]
 
-// GetWalletBalance godoc
+// GetWalletBalances godoc
 // @Summary      Get balances of user's wallets.
 // @Description  Get balances of user's wallets.
 // @Tags         wallet
@@ -39,7 +36,7 @@ type User struct {
 // @Success      200  {object}  GetUserWalletBalanceResponse
 // @Failure      500  {object}  ErrorResponse
 // @Router       /user/{username}/balance [get]
-func (h Handlers) GetWalletBalance(w http.ResponseWriter, r *http.Request) {
+func (h Handlers) GetWalletBalances(w http.ResponseWriter, r *http.Request) {
 	userName := r.PathValue("username")
 
 	walletBalances, err := h.service.GetUserWalletBalanceByUserName(r.Context(), userName)
@@ -54,8 +51,12 @@ type CreateRequestBody struct {
 	UserName string `json:"username"` // Subreddit Name
 }
 
+type CreatedUser struct {
+	Id       int64  `json:"id" example:"1"`
+	Username string `json:"username" example:"user1"`
+}
 type CreateUserResponseData struct {
-	User User `json:"user"`
+	User CreatedUser `json:"user"`
 }
 
 // CreateUser Create godoc
@@ -81,11 +82,38 @@ func (h Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response_types.OkJsonBody(w, CreateUserResponseData{User: User(user)})
+	response_types.OkJsonBody(w, CreateUserResponseData{User: CreatedUser(user)})
 }
 
 type CreateUserResponse = Response[CreateUserResponseData]
-type GetUserWalletBalanceResponse = Response[GetUserBalanceResponseData]
+
+type GetUserTransactionsResponseData struct {
+	walletBalances userrepo.WalletBalances `json:"wallet_balances"`
+}
+
+type GetUserTransactionsResponse = Response[GetUserBalanceResponseData]
+
+// GetWalletTransactions godoc
+// @Summary      Get transactions of user's wallets.
+// @Description  Get transactions of user's wallets.
+// @Tags         wallet
+// @Accept       application/json
+// @Produce      application/json
+// @Param        user_id   					path      string  true  "username"
+// @Success      200  {object}  GetUserTransactionsResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /user/{username}/transactions [get]
+func (h Handlers) GetWalletTransactions(w http.ResponseWriter, r *http.Request) {
+	userName := r.PathValue("username")
+
+	walletBalances, err := h.service.GetUserWalletBalanceByUserName(r.Context(), userName)
+	if err != nil {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		return
+	}
+	response_types.OkJsonBody(w, GetUserBalanceResponseData{walletBalances: walletBalances})
+}
+
 type Response[T any] struct {
 	Data  T       `json:"data"`
 	Error *string `json:"error"`

@@ -12,6 +12,12 @@ type Client struct {
 	serverUrl string
 }
 
+func NewClient(serverUrl string) (*Client, error) {
+	return &Client{
+		serverUrl: serverUrl,
+	}, nil
+}
+
 type WalletBalanceResponseBody struct {
 	Error *string `json:"error"`
 }
@@ -102,8 +108,45 @@ func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error
 	return b, resp.StatusCode, err
 }
 
-func NewClient(serverUrl string) (*Client, error) {
-	return &Client{
-		serverUrl: serverUrl,
-	}, nil
+type Transaction struct{}
+
+type TransactionResponseBodyData struct {
+	Transactions []Transaction `json:"transactions"`
+}
+
+type TransactionResponseBody struct {
+	Error *string                     `json:"error"`
+	Data  TransactionResponseBodyData `json:"data"`
+}
+
+func (c *Client) GetTransactionHistory(username string) (WalletBalanceResponseBody, int, error) {
+	if username == "" {
+		return WalletBalanceResponseBody{}, 0, fmt.Errorf("malformedclient request. abort sending")
+	}
+	baseUrl := c.serverUrl + "/user/" + username + "/transactions"
+
+	resp, err := http.Get(baseUrl)
+	if err != nil {
+		return WalletBalanceResponseBody{}, 0, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+
+	//log.Println(string(body))
+	//log.Println(resp.StatusCode)
+	if err != nil {
+		return WalletBalanceResponseBody{}, 0, err
+	}
+
+	var b WalletBalanceResponseBody
+	err = json.Unmarshal(body, &b)
+	if err != nil {
+		return WalletBalanceResponseBody{}, 0, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("%s", *b.Error)
+	}
+	return b, resp.StatusCode, err
 }

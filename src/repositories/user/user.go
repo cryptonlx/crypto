@@ -96,6 +96,30 @@ func (r *Repo) getWalletsByUserId(ctx context.Context, tx pgx.Tx, userId int64) 
 	return wallets, nil
 }
 
+type Transaction struct{}
+
+func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]Transaction, error) {
+	if tx == nil {
+		return []Transaction{}, utils.NilTxError
+	}
+	rows, err := tx.Query(ctx, "select id, user_account_id, currency_type, value from wallets where user_account_id=$1", userId)
+	if err != nil {
+		return []Transaction{}, err
+	}
+	defer rows.Close()
+
+	var transactions []Transaction
+	for rows.Next() {
+		var t Transaction
+		//rows.Scan(&t.Id, &t.CurrencyType, &t.Value)
+		//if err := rows.Err(); err != nil {
+		//	return []Transaction{}, err
+		//}
+		transactions = append(transactions, t)
+	}
+	return transactions, nil
+}
+
 type CurrencyType = string
 
 const CurrencyTypeUSD CurrencyType = "USD"
@@ -106,32 +130,61 @@ type Wallet struct {
 	Value        int64
 }
 
-type UserBalance struct {
+type WalletBalances struct {
 	User    User
 	Wallets []Wallet
 }
 
-func (r *Repo) GetUserBalance(ctx context.Context, username string) (UserBalance, error) {
+func (r *Repo) WalletBalances(ctx context.Context, username string) (WalletBalances, error) {
 	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel: pgx.RepeatableRead,
 	})
 	if err != nil {
-		return UserBalance{}, err
+		return WalletBalances{}, err
 	}
 	defer tx.Rollback(ctx)
 
 	user, err := r.getUser(ctx, tx, username)
 	if err != nil {
-		return UserBalance{}, err
+		return WalletBalances{}, err
 	}
 
 	wallets, err := r.getWalletsByUserId(ctx, tx, user.Id)
 	if err != nil {
-		return UserBalance{}, err
+		return WalletBalances{}, err
 	}
-	return UserBalance{
+	return WalletBalances{
 		User:    *user,
 		Wallets: wallets,
+	}, nil
+}
+
+type UserTransactions struct {
+	User         User
+	Transactions []Transaction
+}
+
+func (r *Repo) Transactions(ctx context.Context, username string) (UserTransactions, error) {
+	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.RepeatableRead,
+	})
+	if err != nil {
+		return UserTransactions{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	user, err := r.getUser(ctx, tx, username)
+	if err != nil {
+		return UserTransactions{}, err
+	}
+
+	transactions, err := r.getTransactionsByUserId(ctx, tx, user.Id)
+	if err != nil {
+		return UserTransactions{}, err
+	}
+	return UserTransactions{
+		User:         *user,
+		Transactions: transactions,
 	}, nil
 }
 

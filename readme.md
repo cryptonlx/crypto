@@ -34,59 +34,60 @@ The tests are end-to-end and will require external connections (db etc.).
 
     `/POST /wallet/deposit`
 
-    - IDEMPOTENT. See [Resource Modification](#resource-modification)
+    - See [Wallet Idempotency](#resource-modification)
 2. **[API-WALL-WDR]** Withdraw user's wallet
 
     `/POST /wallet/withdrawal`
 
-    - IDEMPOTENT. See [Resource Modification](#resource-modification)
+    - See [Wallet Idempotency](#resource-modification)
 3. **[API-WALL-TRF]** Transfer from one user's account to another user's account.
 
     `/POST /wallet/transfer`
 
-    - IDEMPOTENT. See [Resource Modification](#resource-modification)
+    - See [Wallet Idempotency](#resource-modification)
     - currency type of wallets must match.
-4. **[API-USER-BAL]** Get balances of user's wallets.
+4. **[API-WALL-BAL]** Get balances of user's wallets.
 
     `/GET /user/{username}/balance`
 
-5. **[API-USER-HST]** Get user's transaction history
+5. **[API-WALL-HST]** Get user's transaction history.
 
-    `/GET /user/transactions`
+    `/GET /user/{username}/transactions`
 
-6. **[API-USER-NEW]** Create new user
+6. **[API-USER-NEW]** Create new user.
 
    `/POST /user`
 
     Fails on conflict with existing user. User identification by `request.username`.
 
-### Functional Requirements
-
-#### Glossary
+### Glossary
 
 - User: an account that can own wallets.
 - Wallet: Value store of a currency owned by a User.
 - Transaction: An set of operations to process a deposit/withdraw/transfer request.
 - Ledger: Authoritative set of records for wallet debit/credit.
 
-### Requirements
+### Functional Requirements
+
 - Create new user if not exists.
 - Each user can have multiple wallets. A user cannot have two wallets of same currency.
 - Supports deposit and withdrawal.
 - Supports transfer from/to wallets.
 - Enable viewing of wallet balance and transaction history.
 
-### Non-functional requirements
+### Non-functional Requirements
 
-#### Resource Modification
-- Idempotency for modification requests.
-  - Requests will require a timestamp id as nonce field that is applicable. Requests with same `username` and `nonce` will be treated as duplicitous.
-  - There will be no operation retries. Outcome must be success or failure and subsequent request will receive the same response.
+#### Wallet Idempotency
+- Idempotency for modification requests:
+  - Include a 13-digit unix timestamp as nonce field for request identification. Subsequent requests with same `username` and `nonce` will be treated as duplicitous.
+  - There will be no operation retries. Subsequent request will receive the same response as the first.
 
 #### Atomicity
 - Operations should be atomic and serialized across affected tables to ensure data integrity.
 
 ### Things to Improve on (Current and Future Scope)
+- Testing
+  - Can add table-driven unit tests for more confidence.
 - Scalability
   - Consider service availability/maintainability for massive operations.
     - Upgrade in-mem cache to Redis so that server is stateless.

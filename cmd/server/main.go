@@ -38,7 +38,8 @@ func main() {
 	taskService := userservice.New(taskRepo)
 	taskHandlers := usermux.NewHandlers(taskService)
 
-	mux.HandleFunc("GET /user/{username}/balance", taskHandlers.GetWalletBalance)
+	mux.HandleFunc("GET /user/{username}/balance", taskHandlers.GetWalletBalances)
+	mux.HandleFunc("GET /user/{username}/transactions", taskHandlers.GetWalletTransactions)
 	mux.HandleFunc("POST /user", taskHandlers.CreateUser)
 
 	go func() {
@@ -71,7 +72,7 @@ func Init() (serverconfig.Params, *pgxpool.Pool, error) {
 	pgConfig.MaxConnIdleTime = 5 * time.Minute
 	ctx := context.Background()
 
-	// GetWalletBalance the pool
+	// GetWalletBalances the pool
 	dbConnPool, err := pgxpool.NewWithConfig(ctx, pgConfig)
 	if err != nil {
 		return serverconfig.Params{}, nil, err

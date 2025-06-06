@@ -92,22 +92,47 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/user/{username}/transactions": {
+            "get": {
+                "description": "Get transactions of user's wallets.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallet"
+                ],
+                "summary": "Get transactions of user's wallets.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "username",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.GetUserTransactionsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "github_com_cryptonlx_crypto_src_controller_mux_user.User": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                },
-                "username": {
-                    "type": "string",
-                    "example": "user1"
-                }
-            }
-        },
         "user.CreateRequestBody": {
             "type": "object",
             "properties": {
@@ -132,7 +157,20 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "user": {
-                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User"
+                    "$ref": "#/definitions/user.CreatedUser"
+                }
+            }
+        },
+        "user.CreatedUser": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "username": {
+                    "type": "string",
+                    "example": "user1"
                 }
             }
         },
@@ -141,6 +179,17 @@ const docTemplate = `{
         },
         "user.GetUserBalanceResponseData": {
             "type": "object"
+        },
+        "user.GetUserTransactionsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/user.GetUserBalanceResponseData"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
         },
         "user.GetUserWalletBalanceResponse": {
             "type": "object",
