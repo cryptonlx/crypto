@@ -3,7 +3,6 @@ package user
 import (
 	"context"
 	"errors"
-
 	userrepo "github.com/cryptonlx/crypto/src/repositories/user"
 )
 
@@ -31,6 +30,7 @@ func (s Service) CreateUser(ctx context.Context, username string) (userrepo.User
 	if username == "" {
 		return userrepo.User{}, errors.New("user name cannot be empty")
 	}
+
 	user, err := s.repo.CreateUser(ctx, username)
 	if err != nil {
 		return userrepo.User{}, err

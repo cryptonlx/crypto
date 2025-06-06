@@ -20,11 +20,11 @@ Ensure API test server is ready.
     - [x] [T_0001_002] Create user with `username`
         - Endpoint: [API-USER-NEW]
         - [x] Status: 200
-    - [ ] Create duplicate user `USERNAME` (same as above)
+    - [x] [T_0001_003] Create duplicate user `username` (same as above)
         - Endpoint: [API-USER-NEW]
-        - [ ] Error: `ERROR_MESSAGE` = `"USER_EXISTS"`
-        - [ ] Status: 400
-    - [ ] Get user `USER_ID` (same as above)\
+        - [x] Error: `ERROR_MESSAGE` = `"unique_violation"`
+        - [x] Status: 400
+    - [ ] Get user `username` (same as above)
         - Endpoint: [API-USER-BAL]
         - Status: 200
 

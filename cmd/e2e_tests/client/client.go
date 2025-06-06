@@ -54,11 +54,13 @@ type CreatedUser struct {
 	Id       int64  `json:"id" example:"1"`
 }
 
+type CreateUserResponseData struct {
+	CreatedUser `json:"user"`
+}
+
 type CreateUserResponseBody struct {
-	Error *string `json:"error"`
-	Data  struct {
-		CreatedUser
-	} `json:"data"`
+	Error *string                `json:"error"`
+	Data  CreateUserResponseData `json:"data"`
 }
 
 func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error) {
@@ -80,22 +82,24 @@ func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error
 	}
 	defer resp.Body.Close()
 
+	log.Printf("resp.StatusCode: %v\n", resp.StatusCode)
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return CreateUserResponseBody{}, 0, err
 	}
 
-	log.Printf("Body: %s", string(body))
+	log.Printf("Body: %s\n", string(body))
+
 	var b CreateUserResponseBody
 	err = json.Unmarshal(body, &b)
 	if err != nil {
-		return CreateUserResponseBody{}, 0, err
+		return CreateUserResponseBody{}, 0, fmt.Errorf("response body: %s %v", string(body), err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("%s", *b.Error)
 	}
-
 	return b, resp.StatusCode, err
 }
 

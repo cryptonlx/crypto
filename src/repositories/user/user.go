@@ -2,10 +2,12 @@ package user
 
 import (
 	"context"
+	"errors"
 
 	"github.com/cryptonlx/crypto/src/repositories/utils"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -63,9 +65,13 @@ func (r *Repo) createUser(ctx context.Context, tx pgx.Tx, username string) (User
 	err := row.Scan(&user.Id, &user.Username)
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			err = utils.ToError(pgErr)
+		}
 		return User{}, err
 	}
-	return User{}, nil
+	return user, nil
 }
 
 func (r *Repo) getWalletsByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]Wallet, error) {

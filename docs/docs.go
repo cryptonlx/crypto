@@ -121,10 +121,18 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User"
+                    "$ref": "#/definitions/user.CreateUserResponseData"
                 },
                 "error": {
                     "type": "string"
+                }
+            }
+        },
+        "user.CreateUserResponseData": {
+            "type": "object",
+            "properties": {
+                "user": {
+                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User"
                 }
             }
         },

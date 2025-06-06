@@ -17,9 +17,14 @@ definitions:
   user.CreateUserResponse:
     properties:
       data:
-        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User'
+        $ref: '#/definitions/user.CreateUserResponseData'
       error:
         type: string
+    type: object
+  user.CreateUserResponseData:
+    properties:
+      user:
+        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User'
     type: object
   user.ErrorResponse:
     type: object

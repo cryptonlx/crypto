@@ -54,6 +54,10 @@ type CreateRequestBody struct {
 	UserName string `json:"username"` // Subreddit Name
 }
 
+type CreateUserResponseData struct {
+	User User `json:"user"`
+}
+
 // CreateUser Create godoc
 // @Summary      Create a new user.
 // @Description  Create a new user.
@@ -74,12 +78,13 @@ func (h Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	user, err := h.service.CreateUser(r.Context(), form.UserName)
 	if err != nil {
 		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		return
 	}
 
-	response_types.OkJsonBody(w, User(user))
+	response_types.OkJsonBody(w, CreateUserResponseData{User: User(user)})
 }
 
-type CreateUserResponse = Response[User]
+type CreateUserResponse = Response[CreateUserResponseData]
 type GetUserWalletBalanceResponse = Response[GetUserBalanceResponseData]
 type Response[T any] struct {
 	Data  T       `json:"data"`
