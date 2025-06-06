@@ -24,7 +24,7 @@ Ensure API test server is ready.
         - Endpoint: [API-USER-NEW]
         - [x] Error: `ERROR_MESSAGE` = `"unique_violation"`
         - [x] Status: 400
-    - [x] Get user `username` (same as above)
+    - [x] [T_0001_004] Get existing user `username` (same as above)
         - Endpoint: [API-USER-BAL]
         - Status: 200
 
@@ -45,10 +45,10 @@ Ensure API test server is ready.
 
 - [ ] [T_0003] - Deposit\
   User Stories: [US-001], [US-005]
-    - [ ] New User `USER_ID`
+    - [ ] New User `username`
         - [ ] 200
           Endpoint: [API-USER-NEW]
-        - [ ] 400 Deposit `AMOUNT`=negative value, `nonce`=ts\
+        - [ ] 400 Deposit `amount`=negative value, `nonce`=ts\
           Endpoint: [API-WALL-DEP]
             - `NEGATIVE VALUE`
         - [ ] Get balance Assert `NEW_BALANCE` = `CURRENT_BALANCE` + `AMOUNT`

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -31,8 +30,8 @@ func (c *Client) GetWalletBalance(username string) (WalletBalanceResponseBody, i
 
 	body, err := io.ReadAll(resp.Body)
 
-	log.Println(string(body))
-	log.Println(resp.StatusCode)
+	//log.Println(string(body))
+	//log.Println(resp.StatusCode)
 	if err != nil {
 		return WalletBalanceResponseBody{}, 0, err
 	}
@@ -44,9 +43,9 @@ func (c *Client) GetWalletBalance(username string) (WalletBalanceResponseBody, i
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return b, resp.StatusCode, fmt.Errorf("%s", *b.Error)
+		err = fmt.Errorf("%s", *b.Error)
 	}
-	return b, 0, nil
+	return b, resp.StatusCode, err
 }
 
 type CreatedUser struct {
@@ -82,14 +81,14 @@ func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error
 	}
 	defer resp.Body.Close()
 
-	log.Printf("resp.StatusCode: %v\n", resp.StatusCode)
+	//log.Printf("resp.StatusCode: %v\n", resp.StatusCode)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return CreateUserResponseBody{}, 0, err
 	}
 
-	log.Printf("Body: %s\n", string(body))
+	//log.Printf("Body: %s\n", string(body))
 
 	var b CreateUserResponseBody
 	err = json.Unmarshal(body, &b)

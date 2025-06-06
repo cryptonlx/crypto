@@ -45,7 +45,7 @@ func T_0001(client *client.Client) {
 	username := NewRandomUserName("t00001", 6, 0)
 	createUserResponseData, responseStatusCode, err := client.CreateUser(username)
 	if responseStatusCode != http.StatusOK {
-		log.Fatalf("[T_0001_002] Create User should succeed. responseStatusCode=%v, err=%v", responseStatusCode, err)
+		log.Fatalf("[T_0001_002] Create User should succeed. responseStatusCode=%d, err=%v", responseStatusCode, err)
 	}
 	if err != nil {
 		log.Fatalf("[T_0001_002] Create User should succeed. err=%v", err)
@@ -55,15 +55,25 @@ func T_0001(client *client.Client) {
 	}
 
 	if createUserResponseData.Data.Id == 0 {
-		log.Fatalf("[T_0001_002] Create User success but not return id. createUserResponseData.Data.Id=%v", createUserResponseData.Data.Id)
+		log.Fatalf("[T_0001_002] Create User success but not return id. createUserResponseData.Data.Id=%d", createUserResponseData.Data.Id)
+	}
+
+	if createUserResponseData.Data.Username != username {
+		log.Fatalf("[T_0001_002] Create User success but not return username. createUserResponseData.Data.Username=%s", createUserResponseData.Data.Username)
 	}
 
 	createUserResponseData, responseStatusCode, err = client.CreateUser(username)
 	if responseStatusCode != http.StatusBadRequest {
-		log.Fatalf("[T_0001_003] Create Duplicate User should fail with 400. responseStatusCode=%v, err=%v", responseStatusCode, err)
+		log.Fatalf("[T_0001_003] Create Duplicate User should fail with 400. responseStatusCode=%d, err=%v", responseStatusCode, err)
 	}
 
 	if createUserResponseData.Error == nil || *createUserResponseData.Error != "unique_violation" {
-		log.Fatalf(`[T_0001_003] Create Duplicate User should fail with "unique_violation". responseStatusCode=%v, err=%v`, *createUserResponseData.Error, err)
+		log.Fatalf(`[T_0001_003] Create Duplicate User should fail with "unique_violation". responseStatusCode=%d, err=%v`, *createUserResponseData.Error, err)
 	}
+
+	responseData, responseStatusCode, err = client.GetWalletBalance(username)
+	if responseStatusCode != http.StatusOK {
+		log.Fatalf(`[T_0001_004] GetWalletBalance() succeed with 200. Got responseStatusCode=%d, err=%#v`, responseStatusCode, err)
+	}
+
 }
