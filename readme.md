@@ -30,23 +30,23 @@ The tests are end-to-end and will require external connections (db etc.).
   - Verify, refine and update API contract.
 
 # API Endpoints
-1. **[API-WALL-DEP]** Deposit user's wallet
+1. **[API-WALL-DEP]** Deposit to user's wallet.
 
     `/POST /wallet/deposit`
 
-    - IDEMPOTENT. See [Resource Modification](#wallet-modification)
+    - IDEMPOTENT. See [Resource Modification](#resource-modification)
 2. **[API-WALL-WDR]** Withdraw user's wallet
 
     `/POST /wallet/withdrawal`
 
-    - IDEMPOTENT. See [Resource Modification](#wallet-modification)
+    - IDEMPOTENT. See [Resource Modification](#resource-modification)
 3. **[API-WALL-TRF]** Transfer from one user's account to another user's account.
 
     `/POST /wallet/transfer`
 
-    - IDEMPOTENT. See [Resource Modification](#wallet-modification)
-    - Target wallet's currency must match source's wallet.
-4. **[API-USER-BAL]** Get specify user balances
+    - IDEMPOTENT. See [Resource Modification](#resource-modification)
+    - currency type of wallets must match.
+4. **[API-USER-BAL]** Get wallet balances of user.
 
     `/GET /user/balances`
 
@@ -58,7 +58,7 @@ The tests are end-to-end and will require external connections (db etc.).
 
    `/POST /user`
 
-    Fails on conflict with existing user. User identification by `request.user_id`.
+    Fails on conflict with existing user. User identification by `request.username`.
 
 ### Functional Requirements
 
@@ -66,10 +66,12 @@ The tests are end-to-end and will require external connections (db etc.).
 
 - User: an account that can own wallets.
 - Wallet: Value store of a currency owned by a User.
+- Transaction: An set of operations to process a deposit/withdraw/transfer request.
+- Ledger: Authoritative set of records for wallet debit/credit.
 
 ### Requirements
 - Create new user if not exists.
-- Each user can have multiple wallets.
+- Each user can have multiple wallets. A user cannot have two wallets of same currency.
 - Supports deposit and withdrawal.
 - Supports transfer from/to wallets.
 
@@ -77,12 +79,8 @@ The tests are end-to-end and will require external connections (db etc.).
 
 #### Resource Modification
 - Idempotency for modification requests.
-  - Requests will require a timestamp id as nonce field that is applicable. Requests with same nonce will be treated as duplicitous.
-  - There will be no operation retries.
-    - For example, new request (nonce:`001`) deposit of $50. Outcome must be success or failure (subsequent request will receive the same response).
-      - If success, return status: `SUCCESS`.
-      - If fail, return status: `ERROR_MESSAGE`.
-      - To retry, send another request (nonce:`002`).
+  - Requests will require a timestamp id as nonce field that is applicable. Requests with same `username` and `nonce` will be treated as duplicitous.
+  - There will be no operation retries. Outcome must be success or failure and subsequent request will receive the same response.
 
 #### Atomicity
 - Operations should be atomic and serialized across affected tables to ensure data integrity.
@@ -92,14 +90,14 @@ The tests are end-to-end and will require external connections (db etc.).
   - Consider service availability/maintainability for massive operations.
     - Upgrade in-mem cache to Redis so that server is stateless.
     - Set rate limiting per endpoint basis to stabilise server.
-  - Support for asynchronous communications
-    - For example, notify on operation success, balance change etc.
+  - Support for asynchronous services.
+    - For example, notify on operation fail/success, balance change etc.
 - Payload selection
   - List responses should have pagination parameters to return subset as result.
 - Greater API Flexibility
   - Currency Value and Unit Type
     - Support for cross-currency transfer.
-    - Decide on value type assignment in PostgreSQL. There are a few options to choose from:
+    - Decide on better value type assignment in PostgreSQL. There are a few options to choose from:
       - Multiply value by 1000x and store as `bigint`.
       - Store as floating point.
       - Store as `money`.
