@@ -14,8 +14,8 @@ cd crypto
 
 ### Commands
 
-#### start server `go run ./cmd/server`
-#### tests `<server_url> go run ./cmd/e2e_tests`
+#### start server `DATABASE_URL=<> go run ./cmd/server`
+#### tests `SERVER_URL=<server_url> go run ./cmd/e2e_tests`
 Spins up a client that executes the [???test_plan](???).
 
 # Design Approach
