@@ -23,27 +23,32 @@ Spins up a client that executes the [???test_plan](???).
 The HTTP APIs will be drafted and tests will be written accordingly to verify the behavior via the API contract.
 The tests are end-to-end and will require external connections (db etc.).
 
-# APIs
-1. Deposit to specify user wallet
+- Understand requirements.
+- Create [Test Plan](./test_plan.md).
+- Create API Contract.
+- Write failing test cases. Implement controller, application logic and database layer. Verify and refine.
+
+# API Endpoints
+1. **[API-USER-DEP]** Deposit to specify user wallet
 
     `/POST /user/deposit_intent`
 
-    - IDEMPOTENT
-2. Withdraw from specify user wallet
+    - IDEMPOTENT. See [Wallet Modification](#wallet-modification)
+2. **[API-USER-WDR]** Withdraw from specify user wallet
 
     `/POST /user/withdrawal`
 
-    - IDEMPOTENT
-3. Transfer from one user to another user
+    - IDEMPOTENT. See [Wallet Modification](#wallet-modification)
+3. **[API-USER-TRF]** Transfer from one user to another user
 
     `/POST /user/transfer`
 
-    - IDEMPOTENT
-4. Get specify user balance
+    - IDEMPOTENT. See [Wallet Modification](#wallet-modification)
+4. **[API-USER-BAL]** Get specify user balance
 
     `/GET /user`
 
-5. Get specify user transaction history
+5. **[API-USER-HST]** Get specify user transaction history
 
     `/GET /user/wallet_history`
 
@@ -57,7 +62,7 @@ The tests are end-to-end and will require external connections (db etc.).
   - There will be no operation retries.
     - For example, user request (nonce:`001`) deposit of $50. Outcome must be success or failure (subsequent request will receive the same response).
       - If success, return status: `SUCCESS`.
-      - If fail, return status: `FAILURE_MESSAGE`.
+      - If fail, return status: `ERROR_MESSAGE`.
       - To retry, send another user request (nonce:`002`).
 
 - Operations should be atomic and serialized across affected tables to ensure data integrity.
@@ -73,7 +78,12 @@ The tests are end-to-end and will require external connections (db etc.).
 - Payload selection
   - List responses should have pagination parameters to return subset as result.
 - Greater API Flexibility
-  - Currency Unit
+  - Currency Value and Unit Type
+    - Support for multi currency type.
+    - Decide on value type assignment in PostgreSQL. There are a few options to choose from:
+      - Multiply value by 1000x and store as `bigint`.
+      - Store as floating point.
+      - Store as `money`.
   - Conversion and Broker Fees Calculation (Effective Transaction Value)
 - Security
   - User authentication via token issuance or session.
