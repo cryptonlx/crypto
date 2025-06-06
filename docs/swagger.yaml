@@ -1,4 +1,26 @@
 definitions:
+  github_com_cryptonlx_crypto_src_controller_mux_user.User:
+    properties:
+      id:
+        example: 1
+        type: integer
+      username:
+        example: user1
+        type: string
+    type: object
+  user.CreateRequestBody:
+    properties:
+      username:
+        description: Subreddit Name
+        type: string
+    type: object
+  user.CreateUserResponse:
+    properties:
+      data:
+        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User'
+      error:
+        type: string
+    type: object
   user.ErrorResponse:
     type: object
   user.GetUserBalanceResponseData:
@@ -13,7 +35,33 @@ definitions:
 info:
   contact: {}
 paths:
-  /user/{user_id}/balance:
+  /user:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user.
+      parameters:
+      - description: Create Request Body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateRequestBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.CreateUserResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponse'
+      summary: Create a new user.
+      tags:
+      - user
+  /user/{username}/balance:
     get:
       consumes:
       - application/json
@@ -37,5 +85,5 @@ paths:
             $ref: '#/definitions/user.ErrorResponse'
       summary: Get balances of user's wallets.
       tags:
-      - user
+      - wallet
 swagger: "2.0"

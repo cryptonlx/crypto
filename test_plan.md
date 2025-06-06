@@ -13,13 +13,13 @@ Ensure API test server is ready.
 [US-005] User can view his/her transaction history
 
 - [ ] [T_0001] User Creation
-    - [x] Get user `USER_ID`
+    - [x] [T_0001_001] Get user by `username`
         - Endpoint: [API-USER-BAL]
         - [x] Error: `ERROR_MESSAGE` = `"resource: user not found"`
         - [x] Status: 400
-    - [ ] Create user `USERNAME` (same as above)
+    - [x] [T_0001_002] Create user with `username`
         - Endpoint: [API-USER-NEW]
-        - [ ] Status: 200
+        - [x] Status: 200
     - [ ] Create duplicate user `USERNAME` (same as above)
         - Endpoint: [API-USER-NEW]
         - [ ] Error: `ERROR_MESSAGE` = `"USER_EXISTS"`

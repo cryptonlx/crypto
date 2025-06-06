@@ -24,11 +24,11 @@ type User struct {
 	Username string
 }
 
-func (r *Repo) getUser(ctx context.Context, tx pgx.Tx, userId int64) (*User, error) {
+func (r *Repo) getUser(ctx context.Context, tx pgx.Tx, username string) (*User, error) {
 	if tx == nil {
 		return nil, utils.NilTxError
 	}
-	rows, err := tx.Query(ctx, "select id, username from user_accounts where id=$1", userId)
+	rows, err := tx.Query(ctx, "select id, username from user_accounts where username=$1", username)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +51,21 @@ func (r *Repo) getUser(ctx context.Context, tx pgx.Tx, userId int64) (*User, err
 		return nil, utils.RowLengthShouldBeAtMost1Error
 	}
 	return &users[0], nil
+}
+
+func (r *Repo) createUser(ctx context.Context, tx pgx.Tx, username string) (User, error) {
+	if tx == nil {
+		return User{}, utils.NilTxError
+	}
+	row := tx.QueryRow(ctx, "insert into user_accounts(username) VALUES ($1) RETURNING id, username", username)
+
+	var user User
+	err := row.Scan(&user.Id, &user.Username)
+
+	if err != nil {
+		return User{}, err
+	}
+	return User{}, nil
 }
 
 func (r *Repo) getWalletsByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]Wallet, error) {
@@ -90,7 +105,7 @@ type UserBalance struct {
 	Wallets []Wallet
 }
 
-func (r *Repo) GetUserBalance(ctx context.Context, userId int64) (UserBalance, error) {
+func (r *Repo) GetUserBalance(ctx context.Context, username string) (UserBalance, error) {
 	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel: pgx.RepeatableRead,
 	})
@@ -99,7 +114,7 @@ func (r *Repo) GetUserBalance(ctx context.Context, userId int64) (UserBalance, e
 	}
 	defer tx.Rollback(ctx)
 
-	user, err := r.getUser(ctx, tx, userId)
+	user, err := r.getUser(ctx, tx, username)
 	if err != nil {
 		return UserBalance{}, err
 	}
@@ -112,4 +127,22 @@ func (r *Repo) GetUserBalance(ctx context.Context, userId int64) (UserBalance, e
 		User:    *user,
 		Wallets: wallets,
 	}, nil
+}
+
+func (r *Repo) CreateUser(ctx context.Context, username string) (User, error) {
+	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.ReadCommitted,
+	})
+	if err != nil {
+		return User{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	user, err := r.createUser(ctx, tx, username)
+	if err != nil {
+		return User{}, err
+	}
+
+	tx.Commit(ctx)
+	return user, nil
 }

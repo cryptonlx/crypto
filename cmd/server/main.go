@@ -38,7 +38,8 @@ func main() {
 	taskService := userservice.New(taskRepo)
 	taskHandlers := usermux.NewHandlers(taskService)
 
-	mux.HandleFunc("GET /user/{user_id}/balance", taskHandlers.GetWalletBalance)
+	mux.HandleFunc("GET /user/{username}/balance", taskHandlers.GetWalletBalance)
+	mux.HandleFunc("POST /user", taskHandlers.CreateUser)
 
 	go func() {
 		log.Println("Listening on " + configParams.ServerParams.Port)

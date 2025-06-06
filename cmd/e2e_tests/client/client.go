@@ -1,48 +1,102 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
-	"strconv"
 )
 
 type Client struct {
 	serverUrl string
 }
 
-type WalletBalanceResponse struct {
-	Error string `json:"error"`
+type WalletBalanceResponseBody struct {
+	Error *string `json:"error"`
 }
 
-func (c *Client) GetWalletBalance(_userId int64) (WalletBalanceResponse, int, error) {
-	userId := strconv.Itoa(int(_userId))
-	baseUrl := c.serverUrl + "/user/" + userId + "/balance"
+func (c *Client) GetWalletBalance(username string) (WalletBalanceResponseBody, int, error) {
+	if username == "" {
+		return WalletBalanceResponseBody{}, 0, fmt.Errorf("malformedclient request. abort sending")
+	}
+	baseUrl := c.serverUrl + "/user/" + username + "/balance"
+
+	resp, err := http.Get(baseUrl)
+	if err != nil {
+		return WalletBalanceResponseBody{}, 0, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+
+	log.Println(string(body))
+	log.Println(resp.StatusCode)
+	if err != nil {
+		return WalletBalanceResponseBody{}, 0, err
+	}
+
+	var b WalletBalanceResponseBody
+	err = json.Unmarshal(body, &b)
+	if err != nil {
+		return WalletBalanceResponseBody{}, 0, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return b, resp.StatusCode, fmt.Errorf("%s", *b.Error)
+	}
+	return b, 0, nil
+}
+
+type CreatedUser struct {
+	Username string `json:"username" example:"tester_123"`
+	Id       int64  `json:"id" example:"1"`
+}
+
+type CreateUserResponseBody struct {
+	Error *string `json:"error"`
+	Data  struct {
+		CreatedUser
+	} `json:"data"`
+}
+
+func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error) {
+	baseUrl := c.serverUrl + "/user"
+
+	requestBody := map[string]interface{}{
+		"username": username,
+	}
+
+	bb, err := json.Marshal(requestBody)
+	if err != nil {
+		return CreateUserResponseBody{}, 0, err
+	}
 
 	fullURL := baseUrl
-
-	resp, err := http.Get(fullURL)
+	resp, err := http.Post(fullURL, "application/json", bytes.NewBuffer(bb))
 	if err != nil {
-		return WalletBalanceResponse{}, 0, err
+		return CreateUserResponseBody{}, 0, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return WalletBalanceResponse{}, 0, err
+		return CreateUserResponseBody{}, 0, err
 	}
 
-	var b WalletBalanceResponse
+	log.Printf("Body: %s", string(body))
+	var b CreateUserResponseBody
 	err = json.Unmarshal(body, &b)
 	if err != nil {
-		return WalletBalanceResponse{}, 0, err
+		return CreateUserResponseBody{}, 0, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return b, resp.StatusCode, fmt.Errorf("%s", b.Error)
+		err = fmt.Errorf("%s", *b.Error)
 	}
-	return b, 0, nil
+
+	return b, resp.StatusCode, err
 }
 
 func NewClient(serverUrl string) (*Client, error) {

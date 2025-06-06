@@ -25,7 +25,7 @@ The tests are end-to-end and will require external connections (db etc.).
 
 - Understand requirements.
 - Create [Test Plan](./test_plan.md).
-- Write failing test cases iteratively.
+- Write failing test cases iteratively @ [e2etests](./cmd/e2e_tests)
   - Implement controller, application logic and database layer.
   - Verify, refine and update API contract.
 

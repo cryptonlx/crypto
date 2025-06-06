@@ -15,14 +15,25 @@ func New(repo *userrepo.Repo) *Service {
 	return &Service{repo: repo}
 }
 
-func (s Service) GetUserWalletBalanceByUserId(ctx context.Context, userId int64) (userrepo.UserBalance, error) {
-	if userId == 0 {
-		return userrepo.UserBalance{}, errors.New("user id cannot be zero")
+func (s Service) GetUserWalletBalanceByUserName(ctx context.Context, username string) (userrepo.UserBalance, error) {
+	if username == "" {
+		return userrepo.UserBalance{}, errors.New("user id cannot be empty")
 	}
 
-	userBalance, err := s.repo.GetUserBalance(ctx, userId)
+	userBalance, err := s.repo.GetUserBalance(ctx, username)
 	if err != nil {
 		return userrepo.UserBalance{}, err
 	}
 	return userBalance, nil
+}
+
+func (s Service) CreateUser(ctx context.Context, username string) (userrepo.User, error) {
+	if username == "" {
+		return userrepo.User{}, errors.New("user name cannot be empty")
+	}
+	user, err := s.repo.CreateUser(ctx, username)
+	if err != nil {
+		return userrepo.User{}, err
+	}
+	return user, nil
 }

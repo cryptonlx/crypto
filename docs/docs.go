@@ -15,7 +15,47 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/user/{user_id}/balance": {
+        "/user": {
+            "post": {
+                "description": "Create a new user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Create a new user.",
+                "parameters": [
+                    {
+                        "description": "Create Request Body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.CreateRequestBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.CreateUserResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{username}/balance": {
             "get": {
                 "description": "Get balances of user's wallets.",
                 "consumes": [
@@ -25,7 +65,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "user"
+                    "wallet"
                 ],
                 "summary": "Get balances of user's wallets.",
                 "parameters": [
@@ -55,6 +95,39 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "github_com_cryptonlx_crypto_src_controller_mux_user.User": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "username": {
+                    "type": "string",
+                    "example": "user1"
+                }
+            }
+        },
+        "user.CreateRequestBody": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "description": "Subreddit Name",
+                    "type": "string"
+                }
+            }
+        },
+        "user.CreateUserResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
         "user.ErrorResponse": {
             "type": "object"
         },

@@ -1,9 +1,9 @@
 package user
 
 import (
-	"context"
+	"encoding/json"
+	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/cryptonlx/crypto/src/controller/response_types"
 	userrepo "github.com/cryptonlx/crypto/src/repositories/user"
@@ -24,25 +24,25 @@ type GetUserBalanceResponseData struct {
 	walletBalances userrepo.UserBalance `json:"wallet_balances"`
 }
 
+type User struct {
+	Id       int64  `json:"id" example:"1"`
+	Username string `json:"username" example:"user1"`
+}
+
 // GetWalletBalance godoc
 // @Summary      Get balances of user's wallets.
 // @Description  Get balances of user's wallets.
-// @Tags         user
+// @Tags         wallet
 // @Accept       application/json
 // @Produce      application/json
 // @Param        user_id   					path      string  true  "username"
 // @Success      200  {object}  GetUserWalletBalanceResponse
 // @Failure      500  {object}  ErrorResponse
-// @Router       /user/{user_id}/balance [get]
+// @Router       /user/{username}/balance [get]
 func (h Handlers) GetWalletBalance(w http.ResponseWriter, r *http.Request) {
-	_user_id := r.PathValue("user_id")
+	userName := r.PathValue("username")
 
-	user_id, err := strconv.Atoi(_user_id)
-	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
-	}
-
-	walletBalances, err := h.service.GetUserWalletBalanceByUserId(context.Background(), int64(user_id))
+	walletBalances, err := h.service.GetUserWalletBalanceByUserName(r.Context(), userName)
 	if err != nil {
 		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
 		return
@@ -50,12 +50,42 @@ func (h Handlers) GetWalletBalance(w http.ResponseWriter, r *http.Request) {
 	response_types.OkJsonBody(w, GetUserBalanceResponseData{walletBalances: walletBalances})
 }
 
+type CreateRequestBody struct {
+	UserName string `json:"username"` // Subreddit Name
+}
+
+// CreateUser Create godoc
+// @Summary      Create a new user.
+// @Description  Create a new user.
+// @Tags         user
+// @Accept       application/json
+// @Produce      application/json
+// @Param        request body CreateRequestBody true "Create Request Body"
+// @Success      200  {object}  CreateUserResponse
+// @Failure      500  {object}  ErrorResponse
+// @Router       /user [post]
+func (h Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
+	form := &CreateRequestBody{}
+	json.NewDecoder(r.Body).Decode(form)
+	if form.UserName == "" {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, errors.New("user name is required"))
+	}
+
+	user, err := h.service.CreateUser(r.Context(), form.UserName)
+	if err != nil {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+	}
+
+	response_types.OkJsonBody(w, User(user))
+}
+
+type CreateUserResponse = Response[User]
 type GetUserWalletBalanceResponse = Response[GetUserBalanceResponseData]
 type Response[T any] struct {
 	Data  T       `json:"data"`
 	Error *string `json:"error"`
 }
 
-var _response = response_types.Response[int](Response[int]{})
+var _ = response_types.Response[int](Response[int]{})
 
 type ErrorResponse = response_types.Response[struct{}]
