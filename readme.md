@@ -48,7 +48,7 @@ The tests are end-to-end and will require external connections (db etc.).
     - currency type of wallets must match.
 4. **[API-USER-BAL]** Get balances of user's wallets.
 
-    `/GET /user/balance`
+    `/GET /user/{username}/balance`
 
 5. **[API-USER-HST]** Get user's transaction history
 

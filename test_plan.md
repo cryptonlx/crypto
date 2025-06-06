@@ -24,7 +24,7 @@ Ensure API test server is ready.
         - Endpoint: [API-USER-NEW]
         - [x] Error: `ERROR_MESSAGE` = `"unique_violation"`
         - [x] Status: 400
-    - [ ] Get user `username` (same as above)
+    - [x] Get user `username` (same as above)
         - Endpoint: [API-USER-BAL]
         - Status: 200
 
