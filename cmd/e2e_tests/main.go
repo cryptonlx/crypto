@@ -112,7 +112,7 @@ func T_0002(client *client.Client) {
 
 	responseBody, responseStatusCode, err = client.Transactions(username)
 	if responseStatusCode != http.StatusOK {
-		log.Fatalf(`[T_0002_003] Transactions() should succeed with 200. Got responseStatusCode=%d, err=%#v`, responseStatusCode, err)
+		log.Fatalf(`[T_0002_003] Transactions() want 200. Got responseStatusCode=%d, err=%#v`, responseStatusCode, err)
 	}
 }
 
@@ -137,13 +137,13 @@ func T_0004(client *client.Client) {
 
 	responseBody, responseStatusCode, err := client.Wallets(username)
 	if responseStatusCode != http.StatusOK {
-		log.Fatalf(`[T_0004_002] SETUP Wallets() should succeed with 200. Got responseStatusCode=%d, err=%#v`, responseStatusCode, err)
+		log.Fatalf(`[T_0004_002] SETUP Wallets() want 200. Got responseStatusCode=%d, err=%#v`, responseStatusCode, err)
 	}
 	if responseBody.Error != nil {
-		log.Fatalf(`[T_0004_002] SETUP Wallets() should succeed with 200. Got responseBody.Error=%s, err=%#v`, *responseBody.Error, err)
+		log.Fatalf(`[T_0004_002] SETUP Wallets() want 200. Got responseBody.Error=%s, err=%#v`, *responseBody.Error, err)
 	}
 	if len(responseBody.Data.Wallets) == 0 {
-		log.Fatalf(`[T_0004_002] SETUP Wallets() should succeed with some wallets. Got len=%d, err=%#v`, len(responseBody.Data.Wallets), err)
+		log.Fatalf(`[T_0004_002] SETUP Wallets() want some wallets. Got len=%d, err=%#v`, len(responseBody.Data.Wallets), err)
 	}
 	if responseBody.Data.Wallets[0].Balance != balanceBefore {
 		log.Fatalf(`[T_0004_002] SETUP Wallets() balance before and after should be same. want=%s, got=%s`, balanceBefore, responseBody.Data.Wallets[0].Balance)
@@ -175,19 +175,16 @@ func T_0005(client *client.Client) {
 	if dRespBody.Data.Transaction.Ledgers[0].EntryType != "credit" {
 		log.Fatalf(`[T_0005_001] Deposit want ledger.entry_type=%s got %s`, "credit", dRespBody.Data.Transaction.Ledgers[0].EntryType)
 	}
-	//if dRespBody.Data.Ledger.Operation != "deposit" {
-	//	log.Fatalf(`[T_0005_001] Deposit want ledger.operation=%s got %s`, "deposit", dRespBody.Data.Ledger.Operation)
-	//}
 
 	responseBody, responseStatusCode, err := client.Wallets(username)
 	if responseStatusCode != http.StatusOK {
-		log.Fatalf(`[T_0005_002] Wallets should succeed with 200. Got responseStatusCode=%d, err=%#v`, responseStatusCode, err)
+		log.Fatalf(`[T_0005_002] Wallets want 200. Got responseStatusCode=%d, err=%#v`, responseStatusCode, err)
 	}
 	if responseBody.Error != nil {
-		log.Fatalf(`[T_0005_002] Wallets should succeed with 200. Got responseBody.Error=%s, err=%#v`, *responseBody.Error, err)
+		log.Fatalf(`[T_0005_002] Wallets want 200. Got responseBody.Error=%s, err=%#v`, *responseBody.Error, err)
 	}
 	if len(responseBody.Data.Wallets) == 0 {
-		log.Fatalf(`[T_0005_002] Wallets should succeed with some wallets. Got len=%d, err=%#v`, len(responseBody.Data.Wallets), err)
+		log.Fatalf(`[T_0005_002] Wallets want some wallets. Got len=%d, err=%#v`, len(responseBody.Data.Wallets), err)
 	}
 	if responseBody.Data.Wallets[0].Balance != "40.123" {
 		log.Fatalf(`[T_0005_002] Wallets balance before and after should be same. want=%s, got=%s`, "40.123", responseBody.Data.Wallets[0].Balance)
@@ -201,8 +198,13 @@ func T_0005(client *client.Client) {
 	if len(tRespBody.Data.Transactions) == 0 {
 		log.Fatalf(`[T_0005_003] Transactions want transactions.len > 0. got 0`)
 	}
-	if len(tRespBody.Data.Transactions[0].Ledgers) == 0 {
+
+	transaction0 := tRespBody.Data.Transactions[0]
+	if len(transaction0.Ledgers) == 0 {
 		log.Fatalf(`[T_0005_003] Transactions want transactions[0].ledgers[0].len > 0. got 0`)
+	}
+	if transaction0.Operation != "deposit" {
+		log.Fatalf(`[T_0005_003] Transactions want transactions[0].ledgers[0].operation=deposit. got %s`, transaction0.Operation)
 	}
 	ledger := tRespBody.Data.Transactions[0].Ledgers[0]
 	if ledger.EntryType != "credit" {
@@ -234,21 +236,21 @@ func SetupUserAndWalletCreation(client *client.Client, logPrefix string) (userna
 
 	responseBody, responseStatusCode, err := client.Wallets(username)
 	if responseStatusCode != http.StatusOK {
-		log.Fatalf(`[%s_002] SETUP Wallets should succeed with 200. Got responseStatusCode=%d, err=%#v`, logPrefix, responseStatusCode, err)
+		log.Fatalf(`[%s_002] SETUP Wallets want 200. Got responseStatusCode=%d, err=%#v`, logPrefix, responseStatusCode, err)
 	}
 	if responseBody.Error != nil {
-		log.Fatalf(`[%s_002] SETUP Wallets should succeed with 200. Got responseBody.Error=%s, err=%#v`, logPrefix, *responseBody.Error, err)
+		log.Fatalf(`[%s_002] SETUP Wallets want 200. Got responseBody.Error=%s, err=%#v`, logPrefix, *responseBody.Error, err)
 	}
 	if len(responseBody.Data.Wallets) != 0 {
-		log.Fatalf(`[%s_002] SETUP Wallets should succeed with no wallets. Got len=%d, err=%#v`, logPrefix, len(responseBody.Data.Wallets), err)
+		log.Fatalf(`[%s_002] SETUP Wallets want no wallets. Got len=%d, err=%#v`, logPrefix, len(responseBody.Data.Wallets), err)
 	}
 
 	createWalletResponseBody, createWalletResponseStatusCode, err := client.CreateWallet(username, "SGD")
 	if createWalletResponseStatusCode != http.StatusOK {
-		log.Fatalf(`[%s_003] SETUP CreateWallet should succeed with 200. Got body.Err=%s, statusCode=%d, err=%#v`, logPrefix, *createWalletResponseBody.Error, createWalletResponseStatusCode, err)
+		log.Fatalf(`[%s_003] SETUP CreateWallet want 200. Got body.Err=%s, statusCode=%d, err=%#v`, logPrefix, *createWalletResponseBody.Error, createWalletResponseStatusCode, err)
 	}
 	if createWalletResponseBody.Error != nil {
-		log.Fatalf(`[%s_003] SETUP CreateWallet should succeed with 200. Got createWalletResponseBody.Error=%s, err=%#v`, logPrefix, *createWalletResponseBody.Error, err)
+		log.Fatalf(`[%s_003] SETUP CreateWallet want 200. Got createWalletResponseBody.Error=%s, err=%#v`, logPrefix, *createWalletResponseBody.Error, err)
 	}
 	wallet := createWalletResponseBody.Data.Wallet
 	if wallet.Id == 0 {

@@ -90,12 +90,12 @@ func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error
 type Transaction struct {
 	Ledgers []Ledger `json:"ledgers"`
 
-	Id            int64     `json:"id" example:"1"`
-	UserAccountId int64     `json:"user_account_id" example:"1"`
-	Nonce         int64     `json:"nonce"`
-	Status        string    `json:"status"`
-	Operation     string    `json:"operation"`
-	CreatedAt     time.Time `json:"created_at"`
+	Id          int64     `json:"id" example:"1"`
+	RequestorId int64     `json:"requestor_id" example:"1"`
+	Nonce       int64     `json:"nonce"`
+	Status      string    `json:"status"`
+	Operation   string    `json:"operation"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type TransactionResponseData struct {

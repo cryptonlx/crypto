@@ -234,7 +234,7 @@ paths:
             $ref: '#/definitions/user.ErrorResponseBody'
       summary: Get transactions of user's wallets.
       tags:
-      - wallet
+      - user
   /user/{username}/wallets:
     get:
       consumes:
@@ -259,7 +259,7 @@ paths:
             $ref: '#/definitions/user.ErrorResponseBody'
       summary: Get balances of user's wallets.
       tags:
-      - wallet
+      - user
   /wallet:
     post:
       consumes:

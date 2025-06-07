@@ -48,7 +48,7 @@ type GetWalletsResponseBody = Response[GetWalletsResponseData]
 // Wallets godoc
 // @Summary      Get balances of user's wallets.
 // @Description  Get balances of user's wallets.
-// @Tags         wallet
+// @Tags         user
 // @Accept       application/json
 // @Produce      application/json
 // @Param        user_id   					path      string  true  "username"
@@ -145,7 +145,7 @@ type TransactionsResponseBody = Response[TransactionsResponseData]
 // Transactions godoc
 // @Summary      Get transactions of user's wallets.
 // @Description  Get transactions of user's wallets.
-// @Tags         wallet
+// @Tags         user
 // @Accept       application/json
 // @Produce      application/json
 // @Param        user_id   					path      string  true  "username"
@@ -179,13 +179,13 @@ func (h Handlers) Transactions(w http.ResponseWriter, r *http.Request) {
 		}
 
 		transactions = append(transactions, Transaction{
-			Ledgers: ledgers,
-			Id:      transaction.Transaction.Id,
-			//UserAccountId: transaction.UserAccountId,
-			//Nonce:         transaction.Nonce,
-			//Status:        transaction.Status,
-			//Operation:     transaction.Operation,
-			//CreatedAt:     transaction.CreatedAt,
+			Ledgers:     ledgers,
+			Id:          transaction.Transaction.Id,
+			RequestorId: transaction.Transaction.RequestorId,
+			Nonce:       transaction.Transaction.Nonce,
+			Status:      transaction.Transaction.Status,
+			Operation:   transaction.Transaction.Operation,
+			CreatedAt:   transaction.Transaction.CreatedAt,
 		})
 	}
 	response_types.OkJsonBody(w, TransactionsResponseData{
@@ -261,12 +261,12 @@ type Ledger struct {
 type Transaction struct {
 	Ledgers []Ledger `json:"ledgers"`
 
-	Id            int64     `json:"id" example:"1"`
-	UserAccountId int64     `json:"user_account_id" example:"1"`
-	Nonce         int64     `json:"nonce"`
-	Status        string    `json:"status"`
-	Operation     string    `json:"operation"`
-	CreatedAt     time.Time `json:"created_at"`
+	Id          int64     `json:"id" example:"1"`
+	RequestorId int64     `json:"requestor_id" example:"1"`
+	Nonce       int64     `json:"nonce"`
+	Status      string    `json:"status"`
+	Operation   string    `json:"operation"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 type DepositResponseData struct {
@@ -330,12 +330,12 @@ func (h Handlers) Deposit(w http.ResponseWriter, r *http.Request) {
 					Balance:       ledger.Balance.String(),
 				},
 			},
-			Id:            transaction.Id,
-			UserAccountId: transaction.UserAccountId,
-			Nonce:         transaction.Nonce,
-			Status:        transaction.Status,
-			Operation:     transaction.Operation,
-			CreatedAt:     transaction.CreatedAt,
+			Id:          transaction.Id,
+			RequestorId: transaction.RequestorId,
+			Nonce:       transaction.Nonce,
+			Status:      transaction.Status,
+			Operation:   transaction.Operation,
+			CreatedAt:   transaction.CreatedAt,
 		},
 	})
 

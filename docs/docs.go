@@ -65,7 +65,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "wallet"
+                    "user"
                 ],
                 "summary": "Get transactions of user's wallets.",
                 "parameters": [
@@ -103,7 +103,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "wallet"
+                    "user"
                 ],
                 "summary": "Get balances of user's wallets.",
                 "parameters": [

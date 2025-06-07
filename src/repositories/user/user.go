@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/cryptonlx/crypto/src/repositories/utils"
@@ -164,9 +163,17 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 	}
 
 	// , , l.transaction_id, l.entry_type, l.amount, l.created_at, l.balance
+	/*
 
+			RequestorId: transaction.Transaction.RequestorId,
+		Nonce:         transaction.Transaction.Nonce,
+		Status:        transaction.Transaction.Status,
+		Operation:     transaction.Transaction.Operation,
+		CreatedAt:     transaction.Transaction.CreatedAt,
+
+	*/
 	//
-	rows, err := tx.Query(ctx, `select t.id, COALESCE(json_agg(json_build_object('id',l.wallet_id,'transaction_id',l.transaction_id,'entry_type', l.entry_type,'amount', l.amount,'created_at', l.created_at,'balance', l.balance)), '{}')
+	rows, err := tx.Query(ctx, `select t.id,t.requestor_id, t.nonce, t.status, t.operation,t.created_at, COALESCE(json_agg(json_build_object('id',l.wallet_id,'transaction_id',l.transaction_id,'entry_type', l.entry_type,'amount', l.amount,'created_at', l.created_at,'balance', l.balance)), '{}')
 										from ledgers l
 										inner join wallets w on w.id = l.wallet_id
 										inner join user_accounts ua on ua.id = w.user_account_id and ua.id = $1
@@ -182,7 +189,13 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 	for rows.Next() {
 		var t Transaction
 		var ledgersRaw json.RawMessage
-		rows.Scan(&t.Id, &ledgersRaw)
+		rows.Scan(&t.Id,
+			&t.RequestorId,
+			&t.Nonce,
+			&t.Status,
+			&t.Operation,
+			&t.CreatedAt,
+			&ledgersRaw)
 		var ledgers []Ledger
 		err := json.Unmarshal(ledgersRaw, &ledgers)
 		if err != nil {
@@ -197,7 +210,6 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 		})
 	}
 
-	log.Printf("transactions %#v\n", transactions)
 	return transactions, nil
 }
 
@@ -403,12 +415,12 @@ func (r *Repo) appendLedger(ctx context.Context, tx pgx.Tx, nonce int64, walletI
 }
 
 type Transaction struct {
-	Id            int64
-	UserAccountId int64
-	Nonce         int64
-	Status        string
-	Operation     string
-	CreatedAt     time.Time
+	Id          int64
+	RequestorId int64
+	Nonce       int64
+	Status      string
+	Operation   string
+	CreatedAt   time.Time
 }
 
 func (r *Repo) newTransaction(ctx context.Context, nonce, requestorId int64, operation string) (Transaction, error) {
@@ -423,7 +435,7 @@ func (r *Repo) newTransaction(ctx context.Context, nonce, requestorId int64, ope
 		requestorId, nonce, "reserved", operation)
 
 	var l Transaction
-	err = row.Scan(&l.Id, &l.UserAccountId, &l.Nonce, &l.Status, &l.Operation, &l.CreatedAt)
+	err = row.Scan(&l.Id, &l.RequestorId, &l.Nonce, &l.Status, &l.Operation, &l.CreatedAt)
 	if err != nil {
 		return Transaction{}, err
 	}

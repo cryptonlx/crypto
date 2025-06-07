@@ -50,11 +50,11 @@ The tests are end-to-end and will require external connections (db etc.).
 
     - See [Wallet Idempotency](#wallet-idempotency)
     - currency type of wallets must match.
-4. **[API-WALL-BAL]** Get balances of user's wallets.
+4. **[API-USER-BAL]** Get balances of user's wallets.
 
    `/GET /user/{username}/wallets`
 
-5. **[API-WALL-HST]** Get user's transaction history.
+5. **[API-USER-TXH]** Get user's transaction history.
 
    `/GET /user/{username}/transactions`
 
