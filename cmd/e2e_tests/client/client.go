@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 type Client struct {
@@ -36,7 +37,7 @@ type WalletBalanceResponseBody struct {
 	Data  WalletBalanceResponseData `json:"data"`
 }
 
-func (c *Client) GetWalletBalances(username string) (_responseBody WalletBalanceResponseBody, _httpStatusCode int, _clientError error) {
+func (c *Client) Wallets(username string) (_responseBody WalletBalanceResponseBody, _httpStatusCode int, _clientError error) {
 	if username == "" {
 		return WalletBalanceResponseBody{}, 0, fmt.Errorf("malformedclient request. abort sending")
 	}
@@ -62,10 +63,7 @@ func (c *Client) GetWalletBalances(username string) (_responseBody WalletBalance
 		return WalletBalanceResponseBody{}, 0, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("%s", *b.Error)
-	}
-	return b, resp.StatusCode, err
+	return b, resp.StatusCode, nil
 }
 
 type CreatedUser struct {
@@ -86,50 +84,32 @@ func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error
 		"username": username,
 	}
 
-	return httpPost[CreateUserResponseBody](baseUrl, requestBody)
+	return httpPost[CreateUserResponseBody](baseUrl, requestBody, nil)
 }
 
-type Transaction struct{}
+type Transaction struct {
+	Ledgers []Ledger `json:"ledgers"`
 
-type TransactionResponseBodyData struct {
+	Id            int64     `json:"id" example:"1"`
+	UserAccountId int64     `json:"user_account_id" example:"1"`
+	Nonce         int64     `json:"nonce"`
+	Status        string    `json:"status"`
+	Operation     string    `json:"operation"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+type TransactionResponseData struct {
 	Transactions []Transaction `json:"transactions"`
 }
 
-type TransactionResponseBody struct {
-	Error *string                     `json:"error"`
-	Data  TransactionResponseBodyData `json:"data"`
-}
+type TransactionResponseBody = ResponseBody[TransactionResponseData]
 
-func (c *Client) GetTransactionHistory(username string) (TransactionResponseBody, int, error) {
+func (c *Client) Transactions(username string) (TransactionResponseBody, int, error) {
 	if username == "" {
 		return TransactionResponseBody{}, 0, fmt.Errorf("malformedclient request. abort sending")
 	}
 	baseUrl := c.serverUrl + "/user/" + username + "/transactions"
-
-	resp, err := http.Get(baseUrl)
-	if err != nil {
-		return TransactionResponseBody{}, 0, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-
-	//log.Println(string(body))
-	//log.Println(resp.StatusCode)
-	if err != nil {
-		return TransactionResponseBody{}, 0, err
-	}
-
-	var b TransactionResponseBody
-	err = json.Unmarshal(body, &b)
-	if err != nil {
-		return TransactionResponseBody{}, 0, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("%s", *b.Error)
-	}
-	return b, resp.StatusCode, err
+	return httpGet[TransactionResponseBody](baseUrl, nil)
 }
 
 type User struct {
@@ -137,20 +117,31 @@ type User struct {
 	Id       int64  `json:"id" example:"1"`
 }
 
+type Ledger struct {
+	Id       int64 `json:"id" example:"1"`
+	WalletId int64 `json:"wallet_id" example:"1"`
+	Nonce    int64 `json:"nonce" example:"1749286345000"`
+	//Operation string    `json:"operation" example:"deposit,withdraw,transfer"`
+	EntryType string    `json:"entry_type" example:"credit,debit"`
+	Amount    string    `json:"amount" example:"40.22"`
+	CreatedAt time.Time `json:"created_at"`
+	Balance   string    `json:"balance" example:"2.234"`
+}
+
 type DepositResponseData struct {
-	User `json:"user"`
+	Transaction `json:"transaction"`
 }
 
 type DepositResponseBody = ResponseBody[DepositResponseData]
 
-func (c *Client) Deposit(walletId int64, amount int64) (DepositResponseBody, int, error) {
+func (c *Client) Deposit(username string, walletId int64, amount decimal.Decimal) (DepositResponseBody, int, error) {
 	baseUrl := c.serverUrl + fmt.Sprintf("/wallet/%d/deposit", walletId)
 	requestBody := map[string]interface{}{
-		"amount": strconv.Itoa(int(amount)),
+		"amount": amount.String(),
 		"nonce":  time.Now().Unix(),
 	}
 
-	return httpPost[DepositResponseBody](baseUrl, requestBody)
+	return httpPost[DepositResponseBody](baseUrl, requestBody, []string{username, ""})
 }
 
 type ResponseBody[T any] struct {
@@ -175,5 +166,5 @@ func (c *Client) CreateWallet(username string, currency string) (CreateWalletRes
 		"username": username,
 		"currency": currency,
 	}
-	return httpPost[CreateWalletResponseBody](baseUrl, requestBody)
+	return httpPost[CreateWalletResponseBody](baseUrl, requestBody, nil)
 }

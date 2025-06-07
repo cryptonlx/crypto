@@ -1,5 +1,50 @@
 definitions:
-  github_com_cryptonlx_crypto_src_controller_mux_user.User:
+  github_com_cryptonlx_crypto_src_controllers_mux_user.Ledger:
+    properties:
+      amount:
+        example: "40.22"
+        type: string
+      balance:
+        example: "2.234"
+        type: string
+      created_at:
+        type: string
+      entry_type:
+        description: Operation string    `json:"operation" example:"deposit,withdraw,transfer"`
+        example: credit,debit
+        type: string
+      id:
+        example: 1
+        type: integer
+      transaction_id:
+        example: 1749286345000
+        type: integer
+      wallet_id:
+        example: 1
+        type: integer
+    type: object
+  github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction:
+    properties:
+      created_at:
+        type: string
+      id:
+        example: 1
+        type: integer
+      ledgers:
+        items:
+          $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Ledger'
+        type: array
+      nonce:
+        type: integer
+      operation:
+        type: string
+      status:
+        type: string
+      user_account_id:
+        example: 1
+        type: integer
+    type: object
+  github_com_cryptonlx_crypto_src_controllers_mux_user.User:
     properties:
       id:
         example: 1
@@ -8,8 +53,11 @@ definitions:
         example: user1
         type: string
     type: object
-  github_com_cryptonlx_crypto_src_controller_mux_user.Wallet:
+  github_com_cryptonlx_crypto_src_controllers_mux_user.Wallet:
     properties:
+      balance:
+        example: "10.000123"
+        type: string
       currency:
         example: USD
         type: string
@@ -19,9 +67,6 @@ definitions:
       user_account_id:
         example: 1
         type: integer
-      value:
-        example: "10.000123"
-        type: string
     type: object
   user.CreateUserRequestBody:
     properties:
@@ -47,7 +92,7 @@ definitions:
       username:
         type: string
     type: object
-  user.CreateWalletResponse:
+  user.CreateWalletResponseBody:
     properties:
       data:
         $ref: '#/definitions/user.CreateWalletResponseData'
@@ -70,6 +115,9 @@ definitions:
     type: object
   user.CreatedWallet:
     properties:
+      balance:
+        example: user1
+        type: string
       currency:
         example: USD
         type: string
@@ -79,35 +127,58 @@ definitions:
       user_account_id:
         example: 1
         type: integer
-      username:
-        example: user1
+    type: object
+  user.DepositRequestBody:
+    properties:
+      amount:
+        example: "10.23"
         type: string
+      nonce:
+        example: 1749286345000
+        type: integer
     type: object
-  user.ErrorResponse:
-    type: object
-  user.GetUserTransactionsResponse:
+  user.DepositResponseBody:
     properties:
       data:
-        $ref: '#/definitions/user.GetUserTransactionsResponseData'
+        $ref: '#/definitions/user.DepositResponseData'
       error:
         type: string
     type: object
-  user.GetUserTransactionsResponseData:
+  user.DepositResponseData:
+    properties:
+      transaction:
+        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction'
     type: object
-  user.GetUserWalletBalanceResponse:
+  user.ErrorResponseBody:
+    type: object
+  user.GetWalletsResponseBody:
     properties:
       data:
-        $ref: '#/definitions/user.GetWalletBalanceResponseData'
+        $ref: '#/definitions/user.GetWalletsResponseData'
       error:
         type: string
     type: object
-  user.GetWalletBalanceResponseData:
+  user.GetWalletsResponseData:
     properties:
       user:
-        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User'
+        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.User'
       wallets:
         items:
-          $ref: '#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.Wallet'
+          $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Wallet'
+        type: array
+    type: object
+  user.TransactionsResponseBody:
+    properties:
+      data:
+        $ref: '#/definitions/user.TransactionsResponseData'
+      error:
+        type: string
+    type: object
+  user.TransactionsResponseData:
+    properties:
+      transactions:
+        items:
+          $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction'
         type: array
     type: object
 info:
@@ -135,35 +206,10 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/user.ErrorResponse'
+            $ref: '#/definitions/user.ErrorResponseBody'
       summary: Create a new user.
       tags:
       - user
-  /user/{username}/balance:
-    get:
-      consumes:
-      - application/json
-      description: Get balances of user's wallets.
-      parameters:
-      - description: username
-        in: path
-        name: user_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/user.GetUserWalletBalanceResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/user.ErrorResponse'
-      summary: Get balances of user's wallets.
-      tags:
-      - wallet
   /user/{username}/transactions:
     get:
       consumes:
@@ -181,12 +227,37 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/user.GetUserTransactionsResponse'
+            $ref: '#/definitions/user.TransactionsResponseBody'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/user.ErrorResponse'
+            $ref: '#/definitions/user.ErrorResponseBody'
       summary: Get transactions of user's wallets.
+      tags:
+      - wallet
+  /user/{username}/wallets:
+    get:
+      consumes:
+      - application/json
+      description: Get balances of user's wallets.
+      parameters:
+      - description: username
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.GetWalletsResponseBody'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponseBody'
+      summary: Get balances of user's wallets.
       tags:
       - wallet
   /wallet:
@@ -207,12 +278,45 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/user.CreateWalletResponse'
+            $ref: '#/definitions/user.CreateWalletResponseBody'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/user.ErrorResponse'
+            $ref: '#/definitions/user.ErrorResponseBody'
       summary: Create a new wallet for user.
+      tags:
+      - wallet
+  /wallet/{wallet_id}/deposit:
+    post:
+      consumes:
+      - application/json
+      description: Deposit to wallet
+      parameters:
+      - description: wallet id
+        in: path
+        name: wallet_id
+        required: true
+        type: string
+      - description: Create Deposit Request Body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.DepositRequestBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.DepositResponseBody'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponseBody'
+      security:
+      - BasicAuth: []
+      summary: Deposit to wallet
       tags:
       - wallet
 swagger: "2.0"

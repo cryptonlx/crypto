@@ -74,49 +74,52 @@ Ensure API test server is ready.
         - [x] Status: 200
         - [x] Result: `after.balance`
         - [x] Assert: `before.balance` == `after.balance`
-- [ ] [T_0005] - New User: Deposit Success\
+- [x] [T_0005] - New User: Deposit First Wallet Success\
   User Stories: [US-001], [US-005]
-    - [ ] [Setup] Do [T_0003]
-    - [ ] [T_0005_001] Deposit positive `amount`
+    - [x] [Setup] Do [T_0003]
+    - [x] [T_0005_001] Deposit positive `amount`
         - Endpoint: [API-USER-DEP]
-        - [ ] Status: 200
-        - [ ] Result: `ledger.entry_type` == `"credit"`
-        - [ ] Result: `ledger.amount` == `amount`
-    - [ ] [T_0005_002] Get Balance
+        - [x] Status: 200
+        - [x] Result: `ledger.entry_type` == `"credit"`
+        - [x] Result: `ledger.amount` == `amount`
+    - [x] [T_0005_002] Get Balance
         - Endpoint: [API-WALL-BAL]
-        - [ ] Status: 200
-        - [ ] Result: `after.balance`
-        - [ ] Assert: `before.balance` + amount == `after.balance`
-
-- [ ] [T_0005] - New User: Deposit Success\
+        - [x] Status: 200
+        - [x] Result: `after.balance` = `ledger.balance`
+        - [x] Assert: `before.balance` + amount == `after.balance`
+    - [x] [T_0005_003] Get History
+        - Endpoint: [API-WALL-HST]
+        - [x] Status: 200
+        - [x] Result: Assert `ledgers`= [`deposit`]
+- [ ] [T_0006] - New User: Deposit Success\
   User Stories: [US-001], [US-005]
-    - [ ] [T_0004_001] Create user with `username`
+    - [ ] [T_0006_001] Create user with `username`
         - Endpoint: [API-USER-NEW]
         - [ ] Status: 200
-    - [ ] [T_0004_002] Get History
+    - [ ] [T_0006_002] Get History
         - Endpoint: [API-WALL-HST]
         - [ ] Status: 200
         - [ ] Result: []
-    - [ ] [T_0004_002] Get Balance
+    - [ ] [T_0006_002] Get Balance
         - Endpoint: [API-WALL-BAL]
         - [ ] Status: 200
         - [ ] Result: wallets length > 1
         - [ ] Result: `target_wallet`=`wallets[0]`
         - [ ] Result: `before.amount`=`wallets[0].amount`
-    - [ ] [T_0004_004] Deposit `amount` less than or equals to 0 should fail
+    - [ ] [T_0006_004] Deposit `amount` less than or equals to 0 should fail
         - Endpoint: [API-USER-DEP]
         - [ ] Status: 400
         - [ ] Error Message = `"invalid_amount"`
-    - [ ] [T_0004_005] Get Balance
+    - [ ] [T_0006_005] Get Balance
         - Endpoint: [API-WALL-BAL]
         - [ ] Status: 200
         - [ ] Result: `after.balance`
         - [ ] Assert: `before.balance` == `after.balance`
-    - [ ] [T_0004_006] Get History
+    - [ ] [T_0006_006] Get History
         - Endpoint: [API-WALL-HST]
         - [ ] Status: 200
-        - [ ] Result: [`transaction::deposit::error`]
-- [ ] [T_0005_001] - Withdraw Fail \
+        - [ ] Result: []
+- [ ] [T_0006_001] - Withdraw Fail \
   User Stories: [US-002], [US-005]
     - [ ] New User `USER_ID`
         - [ ] 200

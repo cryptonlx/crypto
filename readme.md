@@ -21,7 +21,7 @@ cd crypto
 
 Spins up a client that executes the [???test_plan](???).
 
-# Design Approach
+# Design/Development Approach
 
 The HTTP APIs will be drafted and tests will be written accordingly to verify the behavior via the API contract.
 The tests are end-to-end and will require external connections (db etc.).
@@ -44,7 +44,7 @@ The tests are end-to-end and will require external connections (db etc.).
    `/POST /wallet/withdrawal`
 
     - See [Wallet Idempotency](#wallet-idempotency)
-3. **[API-WALL-TRF]** Transfer from one user's account to another user's account.
+3. **[API-WALL-TRF]** Transfer from one user's wallet to another user's wallet.
 
    `/POST /wallet/transfer`
 
@@ -71,7 +71,7 @@ The tests are end-to-end and will require external connections (db etc.).
 
 - User: an account that can own wallets.
 - Wallet: Value store of a currency owned by a User.
-- Transaction: An set of operations to process a deposit/withdraw/transfer request.
+- Transaction: A record that changes a wallet's balance.
 - Ledger: Authoritative set of records for wallet debit/credit.
 
 ### Functional Requirements
@@ -80,7 +80,8 @@ The tests are end-to-end and will require external connections (db etc.).
 - Each user can have multiple wallets.
 - Supports deposit and withdrawal.
 - Supports transfer from/to wallets.
-- Enable viewing of wallet balance and transaction history.
+- Viewing of wallet balance.
+- Viewing of transaction history.
 
 ### Non-functional Requirements
 
@@ -88,23 +89,23 @@ The tests are end-to-end and will require external connections (db etc.).
 
 - Idempotency for deposit/withdraw/transfer requests:
     - Include a 13-digit unix timestamp as nonce field for request identification.
-    - Subsequent requests with same `wallet_id` and `nonce` will be treated as duplicitous.
+    - Subsequent requests from same user with same `nonce` will be treated as duplicitous.
     - Each request can succeed at most once. Retries are allowed.
 
 #### Atomicity
 
 - Each request should be processed atomically and serialized across affected tables to ensure data integrity.
 
-### Things to Improve on (Future Scope)
+### Areas to Improve on
 
 - Testing
-    - Can add table-driven unit tests to test in isolation for more confidence.
-- Scalability
-    - Consider service availability/maintainability for massive operations.
-        - Set rate limiting per endpoint basis to stabilise server. Can use Redis to store rate limiter's state a server
-          cluster.
-    - Support for asynchronous services.
-        - For example, notify on operation fail/success, balance change etc.
+    - Add table-driven unit tests to test in packages in isolation for more confidence.
+  - Scalability
+      - Consider service availability/maintainability for massive operations.
+          - Set rate limiting per endpoint basis to stabilise server. Use Redis to store rate limiter's state a server
+            cluster.
+      - Support for asynchronous services.
+          - For example, notify on operation fail/success, balance change etc.
 - Payload selection
     - List responses should have pagination parameters to return subset as result.
 - Greater API Flexibility
@@ -119,4 +120,5 @@ The tests are end-to-end and will require external connections (db etc.).
     - Principal authorization for wallet actions via token issuance or session.
     - Ensure request integrity via payload signing.
 - Observability
+    - Record failed transactions for auditing.
     - Request tracing and logging for easy debugging.

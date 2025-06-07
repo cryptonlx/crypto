@@ -3,9 +3,10 @@ package user
 import (
 	"context"
 	"errors"
-	"github.com/shopspring/decimal"
 
 	userrepo "github.com/cryptonlx/crypto/src/repositories/user"
+
+	"github.com/shopspring/decimal"
 )
 
 type Service struct {
@@ -28,16 +29,16 @@ func (s Service) GetUserWalletBalanceByUserName(ctx context.Context, username st
 	return walletBalances, nil
 }
 
-func (s Service) GetUserTransactionsByUserName(ctx context.Context, username string) (userrepo.UserTransactions, error) {
+func (s Service) GetUserTransactionsByUserName(ctx context.Context, username string) ([]userrepo.TransactionLedgers, error) {
 	if username == "" {
-		return userrepo.UserTransactions{}, errors.New("user id cannot be empty")
+		return []userrepo.TransactionLedgers{}, errors.New("user id cannot be empty")
 	}
 
-	userBalance, err := s.repo.Transactions(ctx, username)
+	transactions, err := s.repo.Transactions(ctx, username)
 	if err != nil {
-		return userrepo.UserTransactions{}, err
+		return []userrepo.TransactionLedgers{}, err
 	}
-	return userBalance, nil
+	return transactions, nil
 }
 
 func (s Service) CreateUser(ctx context.Context, username string) (userrepo.User, error) {
@@ -65,13 +66,13 @@ func (s Service) CreateWallet(ctx context.Context, username string, _currency st
 	return wallet, nil
 }
 
-func (s Service) Deposit(ctx context.Context, nonce int64, walletId int64, amount decimal.Decimal) (userrepo.Ledger, error) {
+func (s Service) Deposit(ctx context.Context, username string, nonce int64, walletId int64, amount decimal.Decimal) (userrepo.Transaction, userrepo.Ledger, error) {
 	if !amount.IsPositive() {
-		return userrepo.Ledger{}, errors.New("invalid_amount")
+		return userrepo.Transaction{}, userrepo.Ledger{}, errors.New("invalid_amount")
 	}
 	if nonce == 0 {
-		return userrepo.Ledger{}, errors.New("nonce cannot be zero")
+		return userrepo.Transaction{}, userrepo.Ledger{}, errors.New("invalid_nonce")
 	}
 
-	return s.repo.Deposit(ctx, nonce, walletId, amount)
+	return s.repo.Deposit(username, ctx, nonce, walletId, amount)
 }

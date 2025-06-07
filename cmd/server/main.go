@@ -23,6 +23,7 @@ import (
 	"github.com/swaggo/http-swagger"
 )
 
+// @securityDefinitions.basic BasicAuth
 func main() {
 	configParams, dbConnPool, err := Init()
 	if err != nil {
@@ -35,15 +36,15 @@ func main() {
 
 	mux.Handle("/swagger/", httpSwagger.WrapHandler)
 
-	taskRepo := userrepo.New(dbConnPool)
-	taskService := userservice.New(taskRepo)
-	taskHandlers := usermux.NewHandlers(taskService)
+	userRepo := userrepo.New(dbConnPool)
+	userService := userservice.New(userRepo)
+	userHandlers := usermux.NewHandlers(userService)
 
-	mux.HandleFunc("GET /user/{username}/wallets", taskHandlers.GetWalletBalances)
-	mux.HandleFunc("GET /user/{username}/transactions", taskHandlers.GetWalletTransactions)
-	mux.HandleFunc("POST /user", taskHandlers.CreateUser)
-	mux.HandleFunc("POST /wallet", taskHandlers.CreateWallet)
-	mux.HandleFunc("POST /wallet/{wallet_id}/deposit", taskHandlers.Deposit)
+	mux.HandleFunc("GET /user/{username}/wallets", userHandlers.Wallets)
+	mux.HandleFunc("GET /user/{username}/transactions", userHandlers.Transactions)
+	mux.HandleFunc("POST /user", userHandlers.CreateUser)
+	mux.HandleFunc("POST /wallet", userHandlers.CreateWallet)
+	mux.HandleFunc("POST /wallet/{wallet_id}/deposit", userHandlers.Deposit)
 
 	go func() {
 		log.Println("Listening on " + configParams.ServerParams.Port)
@@ -79,7 +80,6 @@ func Init() (serverconfig.Params, *pgxpool.Pool, error) {
 	pgConfig.MaxConnIdleTime = 5 * time.Minute
 	ctx := context.Background()
 
-	// GetWalletBalances the pool
 	dbConnPool, err := pgxpool.NewWithConfig(ctx, pgConfig)
 	if err != nil {
 		return serverconfig.Params{}, nil, err

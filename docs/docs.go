@@ -49,45 +49,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/user.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/{username}/balance": {
-            "get": {
-                "description": "Get balances of user's wallets.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "wallet"
-                ],
-                "summary": "Get balances of user's wallets.",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "username",
-                        "name": "user_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/user.GetUserWalletBalanceResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/user.ErrorResponse"
+                            "$ref": "#/definitions/user.ErrorResponseBody"
                         }
                     }
                 }
@@ -119,13 +81,51 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/user.GetUserTransactionsResponse"
+                            "$ref": "#/definitions/user.TransactionsResponseBody"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/user.ErrorResponse"
+                            "$ref": "#/definitions/user.ErrorResponseBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{username}/wallets": {
+            "get": {
+                "description": "Get balances of user's wallets.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallet"
+                ],
+                "summary": "Get balances of user's wallets.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "username",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.GetWalletsResponseBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponseBody"
                         }
                     }
                 }
@@ -159,13 +159,65 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/user.CreateWalletResponse"
+                            "$ref": "#/definitions/user.CreateWalletResponseBody"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/user.ErrorResponse"
+                            "$ref": "#/definitions/user.ErrorResponseBody"
+                        }
+                    }
+                }
+            }
+        },
+        "/wallet/{wallet_id}/deposit": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Deposit to wallet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallet"
+                ],
+                "summary": "Deposit to wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "wallet id",
+                        "name": "wallet_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create Deposit Request Body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.DepositRequestBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.DepositResponseBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponseBody"
                         }
                     }
                 }
@@ -173,7 +225,71 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_cryptonlx_crypto_src_controller_mux_user.User": {
+        "github_com_cryptonlx_crypto_src_controllers_mux_user.Ledger": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "40.22"
+                },
+                "balance": {
+                    "type": "string",
+                    "example": "2.234"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "entry_type": {
+                    "description": "Operation string    ` + "`" + `json:\"operation\" example:\"deposit,withdraw,transfer\"` + "`" + `",
+                    "type": "string",
+                    "example": "credit,debit"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "transaction_id": {
+                    "type": "integer",
+                    "example": 1749286345000
+                },
+                "wallet_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "ledgers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Ledger"
+                    }
+                },
+                "nonce": {
+                    "type": "integer"
+                },
+                "operation": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "user_account_id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "github_com_cryptonlx_crypto_src_controllers_mux_user.User": {
             "type": "object",
             "properties": {
                 "id": {
@@ -186,9 +302,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cryptonlx_crypto_src_controller_mux_user.Wallet": {
+        "github_com_cryptonlx_crypto_src_controllers_mux_user.Wallet": {
             "type": "object",
             "properties": {
+                "balance": {
+                    "type": "string",
+                    "example": "10.000123"
+                },
                 "currency": {
                     "type": "string",
                     "example": "USD"
@@ -200,10 +320,6 @@ const docTemplate = `{
                 "user_account_id": {
                     "type": "integer",
                     "example": 1
-                },
-                "value": {
-                    "type": "string",
-                    "example": "10.000123"
                 }
             }
         },
@@ -245,7 +361,7 @@ const docTemplate = `{
                 }
             }
         },
-        "user.CreateWalletResponse": {
+        "user.CreateWalletResponseBody": {
             "type": "object",
             "properties": {
                 "data": {
@@ -280,6 +396,10 @@ const docTemplate = `{
         "user.CreatedWallet": {
             "type": "object",
             "properties": {
+                "balance": {
+                    "type": "string",
+                    "example": "user1"
+                },
                 "currency": {
                     "type": "string",
                     "example": "USD"
@@ -291,51 +411,87 @@ const docTemplate = `{
                 "user_account_id": {
                     "type": "integer",
                     "example": 1
-                },
-                "username": {
+                }
+            }
+        },
+        "user.DepositRequestBody": {
+            "type": "object",
+            "properties": {
+                "amount": {
                     "type": "string",
-                    "example": "user1"
+                    "example": "10.23"
+                },
+                "nonce": {
+                    "type": "integer",
+                    "example": 1749286345000
                 }
             }
         },
-        "user.ErrorResponse": {
-            "type": "object"
-        },
-        "user.GetUserTransactionsResponse": {
+        "user.DepositResponseBody": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/user.GetUserTransactionsResponseData"
+                    "$ref": "#/definitions/user.DepositResponseData"
                 },
                 "error": {
                     "type": "string"
                 }
             }
         },
-        "user.GetUserTransactionsResponseData": {
+        "user.DepositResponseData": {
+            "type": "object",
+            "properties": {
+                "transaction": {
+                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction"
+                }
+            }
+        },
+        "user.ErrorResponseBody": {
             "type": "object"
         },
-        "user.GetUserWalletBalanceResponse": {
+        "user.GetWalletsResponseBody": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/user.GetWalletBalanceResponseData"
+                    "$ref": "#/definitions/user.GetWalletsResponseData"
                 },
                 "error": {
                     "type": "string"
                 }
             }
         },
-        "user.GetWalletBalanceResponseData": {
+        "user.GetWalletsResponseData": {
             "type": "object",
             "properties": {
                 "user": {
-                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.User"
+                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.User"
                 },
                 "wallets": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controller_mux_user.Wallet"
+                        "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Wallet"
+                    }
+                }
+            }
+        },
+        "user.TransactionsResponseBody": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/user.TransactionsResponseData"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.TransactionsResponseData": {
+            "type": "object",
+            "properties": {
+                "transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction"
                     }
                 }
             }
@@ -345,11 +501,11 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
+	Version:          "",
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "Cryptocom",
+	Title:            "",
 	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

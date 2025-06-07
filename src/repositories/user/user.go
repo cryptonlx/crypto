@@ -2,8 +2,8 @@ package user
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"github.com/shopspring/decimal"
 	"log"
 	"time"
 
@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/shopspring/decimal"
 )
 
 type Repo struct {
@@ -29,7 +30,7 @@ type User struct {
 	Username string
 }
 
-func (r *Repo) getUser(ctx context.Context, tx pgx.Tx, username string) (*User, error) {
+func (r *Repo) user(ctx context.Context, tx pgx.Tx, username string) (*User, error) {
 	if tx == nil {
 		return nil, utils.NilTxError
 	}
@@ -63,11 +64,11 @@ type UserWallet struct {
 	Wallet Wallet
 }
 
-func (r *Repo) getUserAndWalletByWalletId(ctx context.Context, tx pgx.Tx, walletId int64) (*UserWallet, error) {
+func (r *Repo) userWalletByWalletId(ctx context.Context, tx pgx.Tx, walletId int64) (*UserWallet, error) {
 	if tx == nil {
 		return nil, utils.NilTxError
 	}
-	rows, err := tx.Query(ctx, "select ua.id, ua.username, w.id, w.user_account_id, w.currency, w.amount from user_accounts ua join wallets w on w.user_account_id = ua.id  where w.id=$1 FOR UPDATE OF w", walletId)
+	rows, err := tx.Query(ctx, "select ua.id, ua.username, w.id, w.user_account_id, w.currency, w.balance from user_accounts ua join wallets w on w.user_account_id = ua.id  where w.id=$1 FOR UPDATE OF w", walletId)
 	if err != nil {
 		return nil, err
 	}
@@ -148,33 +149,55 @@ func (r *Repo) getWalletsByUserId(ctx context.Context, tx pgx.Tx, userId int64) 
 		wallets = append(wallets, t)
 	}
 
-	log.Printf("%d l%d", userId, len(wallets))
-
 	return wallets, nil
 }
 
-type Transaction struct{}
+type TransactionLedgers struct {
+	Transaction Transaction
+	//Ledgers     []Ledger
+	Ledgers []Ledger
+}
 
-func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]Transaction, error) {
+func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]TransactionLedgers, error) {
 	if tx == nil {
-		return []Transaction{}, utils.NilTxError
+		return []TransactionLedgers{}, utils.NilTxError
 	}
-	// TODO
-	rows, err := tx.Query(ctx, "select id, user_account_id, currency, balance from wallets where user_account_id=$1", userId)
+
+	// , , l.transaction_id, l.entry_type, l.amount, l.created_at, l.balance
+
+	//
+	rows, err := tx.Query(ctx, `select t.id, COALESCE(json_agg(json_build_object('id',l.wallet_id,'transaction_id',l.transaction_id,'entry_type', l.entry_type,'amount', l.amount,'created_at', l.created_at,'balance', l.balance)), '{}')
+										from ledgers l
+										inner join wallets w on w.id = l.wallet_id
+										inner join user_accounts ua on ua.id = w.user_account_id and ua.id = $1
+										left join transactions t on t.id = l.transaction_id
+										group by t.id
+`, userId)
 	if err != nil {
-		return []Transaction{}, err
+		return []TransactionLedgers{}, err
 	}
 	defer rows.Close()
 
-	var transactions []Transaction
+	var transactions []TransactionLedgers
 	for rows.Next() {
 		var t Transaction
-		//rows.Scan(&t.Id, &t.CurrencyType, &t.Balance)
-		//if err := rows.Err(); err != nil {
-		//	return []Transaction{}, err
-		//}
-		transactions = append(transactions, t)
+		var ledgersRaw json.RawMessage
+		rows.Scan(&t.Id, &ledgersRaw)
+		var ledgers []Ledger
+		err := json.Unmarshal(ledgersRaw, &ledgers)
+		if err != nil {
+			return []TransactionLedgers{}, err
+		}
+		if err := rows.Err(); err != nil {
+			return []TransactionLedgers{}, err
+		}
+		transactions = append(transactions, TransactionLedgers{
+			Transaction: t,
+			Ledgers:     ledgers,
+		})
 	}
+
+	log.Printf("transactions %#v\n", transactions)
 	return transactions, nil
 }
 
@@ -199,7 +222,7 @@ func (r *Repo) UserWallets(ctx context.Context, username string) (UserWallets, e
 	}
 	defer tx.Rollback(ctx)
 
-	user, err := r.getUser(ctx, tx, username)
+	user, err := r.user(ctx, tx, username)
 	if err != nil {
 		return UserWallets{}, err
 	}
@@ -214,33 +237,47 @@ func (r *Repo) UserWallets(ctx context.Context, username string) (UserWallets, e
 	}, nil
 }
 
+func (r *Repo) User(ctx context.Context, username string) (*User, error) {
+	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.RepeatableRead,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	user, err := r.user(ctx, tx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
 type UserTransactions struct {
 	User         User
 	Transactions []Transaction
 }
 
-func (r *Repo) Transactions(ctx context.Context, username string) (UserTransactions, error) {
+func (r *Repo) Transactions(ctx context.Context, username string) ([]TransactionLedgers, error) {
 	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel: pgx.RepeatableRead,
 	})
 	if err != nil {
-		return UserTransactions{}, err
+		return []TransactionLedgers{}, err
 	}
 	defer tx.Rollback(ctx)
 
-	user, err := r.getUser(ctx, tx, username)
+	user, err := r.user(ctx, tx, username)
 	if err != nil {
-		return UserTransactions{}, err
+		return []TransactionLedgers{}, err
 	}
 
 	transactions, err := r.getTransactionsByUserId(ctx, tx, user.Id)
 	if err != nil {
-		return UserTransactions{}, err
+		return []TransactionLedgers{}, err
 	}
-	return UserTransactions{
-		User:         *user,
-		Transactions: transactions,
-	}, nil
+	return transactions, nil
 }
 
 func (r *Repo) CreateUser(ctx context.Context, username string) (User, error) {
@@ -276,7 +313,7 @@ func (r *Repo) CreateWallet(ctx context.Context, username string, currency Curre
 		return Wallet{}, err
 	}
 	defer tx.Rollback(ctx)
-	user, err := r.getUser(ctx, tx, username)
+	user, err := r.user(ctx, tx, username)
 	if err != nil {
 		return Wallet{}, err
 	}
@@ -290,64 +327,109 @@ func (r *Repo) CreateWallet(ctx context.Context, username string, currency Curre
 	return wallet, nil
 }
 
-func (r *Repo) Deposit(ctx context.Context, nonce int64, walletId int64, amount decimal.Decimal) (Ledger, error) {
+func (r *Repo) Deposit(username string, ctx context.Context, nonce int64, walletId int64, amount decimal.Decimal) (Transaction, Ledger, error) {
 	if !amount.IsPositive() {
-		return Ledger{}, errors.New("amount negative")
+		return Transaction{}, Ledger{}, errors.New("amount negative")
 	}
 
-	tx, err := r.conn.Begin(context.Background())
+	user, err := r.User(ctx, username)
+	transaction, err := r.newTransaction(ctx, nonce, user.Id, "deposit")
 	if err != nil {
-		return Ledger{}, err
-	}
-	defer tx.Rollback(context.Background())
-
-	userWallet, err := r.getUserAndWalletByWalletId(ctx, tx, walletId)
-	if err != nil {
-		return Ledger{}, err
+		return Transaction{}, Ledger{}, err
 	}
 
-	balance := userWallet.Wallet.Balance.Add(amount)
-	err = r.updateBalance(ctx, tx, walletId, balance)
+	tx, err := r.conn.Begin(ctx)
 	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+	defer tx.Rollback(ctx)
 
-		return Ledger{}, err
-	}
-	ledger, err := r.addLedger(ctx, tx, nonce, walletId, "deposit", "credit", amount, balance)
+	userWallet, err := r.userWalletByWalletId(ctx, tx, walletId)
 	if err != nil {
-		return Ledger{}, err
+		return Transaction{}, Ledger{}, err
 	}
+	if username != userWallet.User.Username {
+		return Transaction{}, Ledger{}, errors.New("username mismatch")
+	}
+
+	newBalance := userWallet.Wallet.Balance.Add(amount)
+	err = r.updateBalance(ctx, tx, walletId, newBalance)
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+
+	ledger, err := r.appendLedger(ctx, tx, nonce, walletId, transaction.Id, "credit", amount, newBalance)
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+
+	err = r.updateTransactionStatus(ctx, tx, transaction.Id, "success")
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+
 	err = tx.Commit(ctx)
 	if err != nil {
-		return Ledger{}, err
+		return Transaction{}, Ledger{}, err
 	}
-	return ledger, nil
+	return transaction, ledger, nil
 }
 
 type Ledger struct {
-	Id        int64
-	WalletId  int64
-	Nonce     int64
-	Operation string
-	EntryType string
-	Amount    decimal.Decimal
-	CreatedAt time.Time
-	Balance   decimal.Decimal
+	Id            int64           `json:"id"`
+	WalletId      int64           `json:"wallet_id"`
+	EntryType     string          `json:"entry_type"`
+	Amount        decimal.Decimal `json:"amount"`
+	CreatedAt     time.Time       `json:"created_at"`
+	Balance       decimal.Decimal `json:"balance"`
+	TransactionId int64           `json:"transaction_id"`
 }
 
-func (r *Repo) addLedger(ctx context.Context, tx pgx.Tx, nonce, walletId int64, operation, entryType string, amount, balance decimal.Decimal) (Ledger, error) {
+func (r *Repo) appendLedger(ctx context.Context, tx pgx.Tx, nonce int64, walletId int64, transactionId int64, entryType string, amount, balance decimal.Decimal) (Ledger, error) {
 	if tx == nil {
 		return Ledger{}, utils.NilTxError
 	}
 
-	//entry_type
-	//amount
-	//created_at
-	row := tx.QueryRow(ctx, "insert into ledgers(wallet_id, nonce, operation, entry_type, amount, created_at, balance) values ($1,$2,$3,$4,$5,now(), $6) returning id, wallet_id, nonce, operation, entry_type, amount, created_at, balance", walletId, nonce, operation, entryType, amount, balance)
+	row := tx.QueryRow(ctx, `insert into ledgers(wallet_id, entry_type, amount, balance, transaction_id, created_at)
+		values ($1,$2,$3,$4,$5,now()) returning id, wallet_id, entry_type, amount, created_at, balance, transaction_id`,
+		walletId, entryType, amount, balance, transactionId)
 
 	var l Ledger
-	err := row.Scan(&l.Id, &l.WalletId, &l.Nonce, &l.Operation, &l.EntryType, &l.Amount, &l.CreatedAt, &l.Balance)
+	err := row.Scan(&l.Id, &l.WalletId, &l.EntryType, &l.Amount, &l.CreatedAt, &l.Balance, &l.TransactionId)
 	if err != nil {
 		return Ledger{}, err
+	}
+	return l, nil
+}
+
+type Transaction struct {
+	Id            int64
+	UserAccountId int64
+	Nonce         int64
+	Status        string
+	Operation     string
+	CreatedAt     time.Time
+}
+
+func (r *Repo) newTransaction(ctx context.Context, nonce, requestorId int64, operation string) (Transaction, error) {
+	tx, err := r.conn.Begin(context.Background())
+	if err != nil {
+		return Transaction{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	row := tx.QueryRow(ctx, `insert into transactions(requestor_id, nonce, status, operation, created_at) values ($1,$2,$3,$4,now())
+	returning id, requestor_id, nonce, status, operation, created_at`,
+		requestorId, nonce, "reserved", operation)
+
+	var l Transaction
+	err = row.Scan(&l.Id, &l.UserAccountId, &l.Nonce, &l.Status, &l.Operation, &l.CreatedAt)
+	if err != nil {
+		return Transaction{}, err
+	}
+	err = tx.Commit(ctx)
+	if err != nil {
+		return Transaction{}, err
 	}
 	return l, nil
 }
@@ -359,5 +441,15 @@ func (r *Repo) updateBalance(ctx context.Context, tx pgx.Tx, id int64, balance d
 	_, err := tx.Exec(ctx, `
     UPDATE wallets
     SET balance = $1 where id = $2`, balance, id)
+	return err
+}
+
+func (r *Repo) updateTransactionStatus(ctx context.Context, tx pgx.Tx, id int64, status string) error {
+	if tx == nil {
+		return utils.NilTxError
+	}
+	_, err := tx.Exec(ctx, `
+    UPDATE transactions
+    SET status = $1 where id = $2`, status, id)
 	return err
 }

@@ -23,6 +23,7 @@ func ContextualizeHttpRequest(req *http.Request) *http.Request {
 	ctx = context.WithValue(ctx, "ORIGIN", req.Header.Get("Origin"))
 	ctx = context.WithValue(ctx, "USER-AGENT", req.Header.Get("User-Agent"))
 	ctx = context.WithValue(ctx, "SESSION_ID", middlewares.GetSessionIdFromRequest(req))
+	ctx = context.WithValue(ctx, "BASIC_AUTH", middlewares.GetBasicAuthFromRequest(req))
 	req = req.WithContext(ctx)
 	return req
 }
