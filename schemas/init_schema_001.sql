@@ -1,47 +1,37 @@
-drop table if exists ledgers;
-drop table if exists wallets;
-drop table if exists transactions;
-drop table if exists user_accounts;
+DROP TABLE if EXISTS ledgers;
+DROP TABLE if EXISTS wallets;
+DROP TABLE if EXISTS user_accounts;
 
-create table public.user_accounts
+CREATE TABLE public.user_accounts
 (
-    id       bigint primary key generated always as identity,
-    username text not null
-        unique
+    id       BIGINT PRIMARY key generated always AS IDENTITY,
+    username text NOT NULL UNIQUE
+);
+CREATE TABLE public.wallets
+(
+    id              BIGINT PRIMARY key generated always AS IDENTITY,
+    user_account_id BIGINT REFERENCES user_accounts (id) NOT NULL,
+    currency        text                                 NOT NULL,
+    balance           NUMERIC(20, 6)                       NOT NULL CHECK (balance >= 0)
 );
 
+CREATE UNIQUE index wallets_currency_idx ON wallets USING btree (user_account_id, currency);
+comment ON COLUMN wallets.currency IS 'ISO4217 compliant USD';
 
-create table transactions
+CREATE TABLE ledgers
 (
-
-    id              bigint primary key generated always as identity,
-    user_account_id bigint references user_accounts (id) not null,
-    nonce           text                                 not null,
-    status_message  text                                 not null,
-    mode            text                                 not null
+    id         BIGINT PRIMARY key generated always AS IDENTITY,
+    wallet_id  BIGINT REFERENCES wallets (id) NOT NULL,
+    nonce      BIGINT                         NOT NULL,
+    operation  text                           NOT NULL,
+    entry_type text                           NOT NULL,
+    amount      NUMERIC(20, 6)                 NOT NULL CHECK (amount > 0),
+    created_at TIMESTAMP WITH TIME zone,
+    balance    numeric(20, 6) CHECK (balance >= 0)
 );
 
-create unique index transactions_nonce_idx on transactions using btree (user_account_id, nonce);
-
-comment on column transactions.nonce is '13 digit epoch i.e 1749199885000';
-comment on column transactions.status_message is 'in_progress, success, error_*';
-comment on column transactions.mode is 'deposit, withdrawal, transfer';
-
-
-create table public.wallets
-(
-    id              bigint primary key generated always as identity,
-    user_account_id bigint references user_accounts (id) NOT NULL,
-    currency        text,
-    value           text
-);
-
-create unique index wallets_currency_idx on wallets using btree (user_account_id, currency);
-
-comment on column wallets.currency is 'ISO4217 compliant USD';
-
-
-
-select *
-from wallets
-         left join user_accounts on user_account_id = user_accounts.id;
+CREATE UNIQUE index ledgers_idx ON ledgers USING btree (wallet_id, nonce);
+comment ON COLUMN ledgers.entry_type IS 'debit,credit';
+comment ON COLUMN ledgers.nonce IS '13 digit epoch i.e 1749199885000';
+comment ON COLUMN ledgers.operation IS 'deposit, withdrawal, transfer';
+comment ON COLUMN ledgers.balance IS 'wallet balance after operation';

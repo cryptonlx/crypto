@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"github.com/shopspring/decimal"
 
 	userrepo "github.com/cryptonlx/crypto/src/repositories/user"
 )
@@ -15,14 +16,14 @@ func New(repo *userrepo.Repo) *Service {
 	return &Service{repo: repo}
 }
 
-func (s Service) GetUserWalletBalanceByUserName(ctx context.Context, username string) (userrepo.WalletBalances, error) {
+func (s Service) GetUserWalletBalanceByUserName(ctx context.Context, username string) (userrepo.UserWallets, error) {
 	if username == "" {
-		return userrepo.WalletBalances{}, errors.New("user id cannot be empty")
+		return userrepo.UserWallets{}, errors.New("user id cannot be empty")
 	}
 
-	walletBalances, err := s.repo.WalletBalances(ctx, username)
+	walletBalances, err := s.repo.UserWallets(ctx, username)
 	if err != nil {
-		return userrepo.WalletBalances{}, err
+		return userrepo.UserWallets{}, err
 	}
 	return walletBalances, nil
 }
@@ -62,4 +63,15 @@ func (s Service) CreateWallet(ctx context.Context, username string, _currency st
 		return userrepo.Wallet{}, err
 	}
 	return wallet, nil
+}
+
+func (s Service) Deposit(ctx context.Context, nonce int64, walletId int64, amount decimal.Decimal) (userrepo.Ledger, error) {
+	if !amount.IsPositive() {
+		return userrepo.Ledger{}, errors.New("invalid_amount")
+	}
+	if nonce == 0 {
+		return userrepo.Ledger{}, errors.New("nonce cannot be zero")
+	}
+
+	return s.repo.Deposit(ctx, nonce, walletId, amount)
 }

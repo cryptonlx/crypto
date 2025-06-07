@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type Client struct {
@@ -21,12 +23,12 @@ type Wallet struct {
 	Id            int64  `json:"id"`
 	UserAccountId int64  `json:"user_account_id"`
 	Currency      string `json:"currency"`
-	Value         string `json:"value"`
+	Balance       string `json:"balance"`
 }
 
 type WalletBalanceResponseData struct {
-	WalletBalances []Wallet `json:"wallets"`
-	User           `json:"user"`
+	Wallets []Wallet `json:"wallets"`
+	User    `json:"user"`
 }
 
 type WalletBalanceResponseBody struct {
@@ -34,11 +36,11 @@ type WalletBalanceResponseBody struct {
 	Data  WalletBalanceResponseData `json:"data"`
 }
 
-func (c *Client) GetWalletBalances(username string) (WalletBalanceResponseBody, int, error) {
+func (c *Client) GetWalletBalances(username string) (_responseBody WalletBalanceResponseBody, _httpStatusCode int, _clientError error) {
 	if username == "" {
 		return WalletBalanceResponseBody{}, 0, fmt.Errorf("malformedclient request. abort sending")
 	}
-	baseUrl := c.serverUrl + "/user/" + username + "/balance"
+	baseUrl := c.serverUrl + "/user/" + username + "/wallets"
 
 	resp, err := http.Get(baseUrl)
 	if err != nil {
@@ -141,11 +143,13 @@ type DepositResponseData struct {
 
 type DepositResponseBody = ResponseBody[DepositResponseData]
 
-func (c *Client) Deposit(username string, amount int64) (DepositResponseBody, int, error) {
-	baseUrl := c.serverUrl + "/user"
+func (c *Client) Deposit(walletId int64, amount int64) (DepositResponseBody, int, error) {
+	baseUrl := c.serverUrl + fmt.Sprintf("/wallet/%d/deposit", walletId)
 	requestBody := map[string]interface{}{
-		"username": username,
+		"amount": strconv.Itoa(int(amount)),
+		"nonce":  time.Now().Unix(),
 	}
+
 	return httpPost[DepositResponseBody](baseUrl, requestBody)
 }
 
@@ -156,7 +160,10 @@ type ResponseBody[T any] struct {
 
 type CreateWalletResponseData struct {
 	Wallet *struct {
-		Id int64 `json:"id"`
+		Id            int64  `json:"id"`
+		UserAccountId int64  `json:"user_account_id"`
+		Currency      string `json:"currency"`
+		Balance       string `json:"balance"`
 	} `json:"wallet"`
 }
 

@@ -11,8 +11,9 @@ import (
 	"time"
 
 	serverconfig "github.com/cryptonlx/crypto/cmd/server/config"
+	"github.com/cryptonlx/crypto/src/httplog"
 
-	usermux "github.com/cryptonlx/crypto/src/controller/mux/user"
+	usermux "github.com/cryptonlx/crypto/src/controllers/mux/user"
 	userrepo "github.com/cryptonlx/crypto/src/repositories/user"
 	userservice "github.com/cryptonlx/crypto/src/service/user"
 
@@ -38,14 +39,19 @@ func main() {
 	taskService := userservice.New(taskRepo)
 	taskHandlers := usermux.NewHandlers(taskService)
 
-	mux.HandleFunc("GET /user/{username}/balance", taskHandlers.GetWalletBalances)
+	mux.HandleFunc("GET /user/{username}/wallets", taskHandlers.GetWalletBalances)
 	mux.HandleFunc("GET /user/{username}/transactions", taskHandlers.GetWalletTransactions)
 	mux.HandleFunc("POST /user", taskHandlers.CreateUser)
 	mux.HandleFunc("POST /wallet", taskHandlers.CreateWallet)
+	mux.HandleFunc("POST /wallet/{wallet_id}/deposit", taskHandlers.Deposit)
 
 	go func() {
 		log.Println("Listening on " + configParams.ServerParams.Port)
-		http.ListenAndServe(configParams.ServerParams.Port, mux)
+		http.ListenAndServe(configParams.ServerParams.Port, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r = httplog.ContextualizeHttpRequest(r)
+			log.Printf("%s [request received]\n", httplog.SPrintHttpRequestPrefix(r))
+			mux.ServeHTTP(w, r)
+		}))
 	}()
 
 	recvSig := <-interruptSignal
