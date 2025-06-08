@@ -26,6 +26,7 @@ func main() {
 	T_0003(client)
 	T_0004(client)
 	T_0005(client)
+	T_0006(client)
 }
 
 func Ping(client *client.Client) {
@@ -215,6 +216,69 @@ func T_0005(client *client.Client) {
 	}
 }
 
+func T_0006(client *client.Client) {
+	username, wallets := SetupUserAndWalletCreation(client, "T_0006")
+
+	wallet := wallets[0]
+	dRespBody, dStatusCode, cErr := client.Withdraw(username, wallet.Id, decimal.NewFromFloat(50.1))
+	if cErr != nil {
+		log.Fatalf(`[T_0006_001] Deposit transaction want nil err, got error %v`, cErr)
+	}
+	if dStatusCode != http.StatusBadRequest {
+		log.Fatalf("[T_0006_001] Deposit want 400. responseStatusCode=%d, err=%v", dStatusCode, cErr)
+	}
+	if dRespBody.Error == nil || *dRespBody.Error != "insufficient_funds" {
+		var s string
+		if dRespBody.Error != nil {
+			s = *dRespBody.Error
+		}
+		log.Fatalf(`[T_0006_001] Deposit want Response.err == "insufficient_funds". got Response.error=%v`, s)
+	}
+	//if dRespBody.Data.Transaction.Id == 0 {
+	//	log.Fatalf(`[T_0006_001] Deposit want non-zero transaction.Id.`)
+	//}
+	//if dRespBody.Data.Transaction.Ledgers[0].EntryType != "credit" {
+	//	log.Fatalf(`[T_0006_001] Deposit want ledger.entry_type=%s got %s`, "credit", dRespBody.Data.Transaction.Ledgers[0].EntryType)
+	//}
+	//
+	//responseBody, responseStatusCode, err := client.Wallets(username)
+	//if responseStatusCode != http.StatusOK {
+	//	log.Fatalf(`[T_0006_002] Wallets want 200. Got responseStatusCode=%d, err=%#v`, responseStatusCode, err)
+	//}
+	//if responseBody.Error != nil {
+	//	log.Fatalf(`[T_0006_002] Wallets want 200. Got responseBody.Error=%s, err=%#v`, *responseBody.Error, err)
+	//}
+	//if len(responseBody.Data.Wallets) == 0 {
+	//	log.Fatalf(`[T_0006_002] Wallets want some wallets. Got len=%d, err=%#v`, len(responseBody.Data.Wallets), err)
+	//}
+	//if responseBody.Data.Wallets[0].Balance != "40.123" {
+	//	log.Fatalf(`[T_0006_002] Wallets balance before and after should be same. want=%s, got=%s`, "40.123", responseBody.Data.Wallets[0].Balance)
+	//}
+	//
+	//tRespBody, tStatusCode, err := client.Transactions(username)
+	//if tStatusCode != http.StatusOK {
+	//	log.Fatalf(`[T_0006_003] Transactions want 200. Got responseStatusCode=%d, err=%#v`, tStatusCode, err)
+	//}
+	//
+	//if len(tRespBody.Data.Transactions) == 0 {
+	//	log.Fatalf(`[T_0006_003] Transactions want transactions.len > 0. got 0`)
+	//}
+	//
+	//transaction0 := tRespBody.Data.Transactions[0]
+	//if len(transaction0.Ledgers) == 0 {
+	//	log.Fatalf(`[T_0006_003] Transactions want transactions[0].ledgers[0].len > 0. got 0`)
+	//}
+	//if transaction0.Operation != "deposit" {
+	//	log.Fatalf(`[T_0006_003] Transactions want transactions[0].ledgers[0].operation=deposit. got %s`, transaction0.Operation)
+	//}
+	//ledger := tRespBody.Data.Transactions[0].Ledgers[0]
+	//if ledger.EntryType != "credit" {
+	//	log.Fatalf(`[T_0006_003] Transactions want transactions[0].ledgers[0].entry_type=credit. got %s`, ledger.EntryType)
+	//}
+	//if ledger.Amount != "40.123" {
+	//	log.Fatalf(`[T_0006_003] Transactions want transactions[0].ledgers[0].amount="40.123". got %s`, ledger.Amount)
+	//}
+}
 func SetupUserAndWalletCreation(client *client.Client, logPrefix string) (username string, wallets []client.Wallet) {
 	username = NewRandomUserName(logPrefix, 6, 0)
 	createUserResponseData, responseStatusCode, err := client.CreateUser(username)

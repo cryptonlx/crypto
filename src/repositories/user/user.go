@@ -339,12 +339,12 @@ func (r *Repo) CreateWallet(ctx context.Context, username string, currency Curre
 	return wallet, nil
 }
 
-func (r *Repo) Deposit(username string, ctx context.Context, nonce int64, walletId int64, amount decimal.Decimal) (Transaction, Ledger, error) {
+func (r *Repo) Deposit(requestor string, ctx context.Context, nonce int64, walletId int64, amount decimal.Decimal) (Transaction, Ledger, error) {
 	if !amount.IsPositive() {
 		return Transaction{}, Ledger{}, errors.New("amount negative")
 	}
 
-	user, err := r.User(ctx, username)
+	user, err := r.User(ctx, requestor)
 	transaction, err := r.newTransaction(ctx, nonce, user.Id, "deposit")
 	if err != nil {
 		return Transaction{}, Ledger{}, err
@@ -360,8 +360,8 @@ func (r *Repo) Deposit(username string, ctx context.Context, nonce int64, wallet
 	if err != nil {
 		return Transaction{}, Ledger{}, err
 	}
-	if username != userWallet.User.Username {
-		return Transaction{}, Ledger{}, errors.New("username mismatch")
+	if requestor != userWallet.User.Username {
+		return Transaction{}, Ledger{}, errors.New("requestor and wallet owner mismatch")
 	}
 
 	newBalance := userWallet.Wallet.Balance.Add(amount)
@@ -371,6 +371,54 @@ func (r *Repo) Deposit(username string, ctx context.Context, nonce int64, wallet
 	}
 
 	ledger, err := r.appendLedger(ctx, tx, nonce, walletId, transaction.Id, "credit", amount, newBalance)
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+
+	err = r.updateTransactionStatus(ctx, tx, transaction.Id, "success")
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+	return transaction, ledger, nil
+}
+
+func (r *Repo) Withdraw(requestor string, ctx context.Context, nonce int64, walletId int64, amount decimal.Decimal) (Transaction, Ledger, error) {
+	if !amount.IsPositive() {
+		return Transaction{}, Ledger{}, errors.New("amount negative")
+	}
+
+	user, err := r.User(ctx, requestor)
+	transaction, err := r.newTransaction(ctx, nonce, user.Id, "withdraw")
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+
+	tx, err := r.conn.Begin(ctx)
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	userWallet, err := r.userWalletByWalletId(ctx, tx, walletId)
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+	if requestor != userWallet.User.Username {
+		return Transaction{}, Ledger{}, errors.New("requestor and wallet owner mismatch")
+	}
+
+	newBalance := userWallet.Wallet.Balance.Sub(amount)
+	err = r.updateBalance(ctx, tx, walletId, newBalance)
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
+
+	ledger, err := r.appendLedger(ctx, tx, nonce, walletId, transaction.Id, "debit", amount, newBalance)
 	if err != nil {
 		return Transaction{}, Ledger{}, err
 	}
@@ -453,6 +501,11 @@ func (r *Repo) updateBalance(ctx context.Context, tx pgx.Tx, id int64, balance d
 	_, err := tx.Exec(ctx, `
     UPDATE wallets
     SET balance = $1 where id = $2`, balance, id)
+
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		err = utils.ToError(pgErr)
+	}
 	return err
 }
 

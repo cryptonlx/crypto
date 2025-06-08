@@ -144,9 +144,20 @@ func (c *Client) Deposit(username string, walletId int64, amount decimal.Decimal
 	return httpPost[DepositResponseBody](baseUrl, requestBody, []string{username, ""})
 }
 
-type ResponseBody[T any] struct {
-	Error *string `json:"error"`
-	Data  T       `json:"data"`
+type WithdrawResponseData struct {
+	Transaction `json:"transaction"`
+}
+
+type WithdrawResponseBody = ResponseBody[WithdrawResponseData]
+
+func (c *Client) Withdraw(username string, walletId int64, amount decimal.Decimal) (WithdrawResponseBody, int, error) {
+	baseUrl := c.serverUrl + fmt.Sprintf("/wallet/%d/withdraw", walletId)
+	requestBody := map[string]interface{}{
+		"amount": amount.String(),
+		"nonce":  time.Now().Unix(),
+	}
+
+	return httpPost[WithdrawResponseBody](baseUrl, requestBody, []string{username, ""})
 }
 
 type CreateWalletResponseData struct {
@@ -167,4 +178,9 @@ func (c *Client) CreateWallet(username string, currency string) (CreateWalletRes
 		"currency": currency,
 	}
 	return httpPost[CreateWalletResponseBody](baseUrl, requestBody, nil)
+}
+
+type ResponseBody[T any] struct {
+	Error *string `json:"error"`
+	Data  T       `json:"data"`
 }

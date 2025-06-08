@@ -66,7 +66,7 @@ func (s Service) CreateWallet(ctx context.Context, username string, _currency st
 	return wallet, nil
 }
 
-func (s Service) Deposit(ctx context.Context, username string, nonce int64, walletId int64, amount decimal.Decimal) (userrepo.Transaction, userrepo.Ledger, error) {
+func (s Service) Deposit(ctx context.Context, requestor string, nonce int64, walletId int64, amount decimal.Decimal) (userrepo.Transaction, userrepo.Ledger, error) {
 	if !amount.IsPositive() {
 		return userrepo.Transaction{}, userrepo.Ledger{}, errors.New("invalid_amount")
 	}
@@ -74,5 +74,16 @@ func (s Service) Deposit(ctx context.Context, username string, nonce int64, wall
 		return userrepo.Transaction{}, userrepo.Ledger{}, errors.New("invalid_nonce")
 	}
 
-	return s.repo.Deposit(username, ctx, nonce, walletId, amount)
+	return s.repo.Deposit(requestor, ctx, nonce, walletId, amount)
+}
+
+func (s Service) Withdraw(ctx context.Context, requestor string, nonce int64, walletId int64, amount decimal.Decimal) (userrepo.Transaction, userrepo.Ledger, error) {
+	if !amount.IsPositive() {
+		return userrepo.Transaction{}, userrepo.Ledger{}, errors.New("invalid_amount")
+	}
+	if nonce == 0 {
+		return userrepo.Transaction{}, userrepo.Ledger{}, errors.New("invalid_nonce")
+	}
+
+	return s.repo.Withdraw(requestor, ctx, nonce, walletId, amount)
 }

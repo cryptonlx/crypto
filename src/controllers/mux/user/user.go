@@ -338,7 +338,77 @@ func (h Handlers) Deposit(w http.ResponseWriter, r *http.Request) {
 			CreatedAt:   transaction.CreatedAt,
 		},
 	})
+}
 
+type WithdrawResponseData struct {
+	Transaction `json:"transaction"`
+}
+
+type WithdrawResponseBody = Response[WithdrawResponseData]
+
+// Withdraw Create godoc
+// @Summary      Withdraw from wallet
+// @Description  Withdraw from wallet
+// @Tags         wallet
+// @Security     BasicAuth
+// @Accept       application/json
+// @Produce      application/json
+// @Param        wallet_id   					path      string  true  "wallet id"
+// @Param        request body WithdrawRequestBody true "Create Withdraw Request Body"
+// @Success      200  {object}  WithdrawResponseBody
+// @Failure      500  {object}  ErrorResponseBody
+// @Router       /wallet/{wallet_id}/withdraw [post]
+func (h Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	basicAuthB64, _ := ctx.Value("BASIC_AUTH").(string)
+	principal, err := mustExtractUsernameFromBasicAuthValue(basicAuthB64)
+	if err != nil {
+		response_types.ErrorNoBody(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	_walletId := r.PathValue("wallet_id")
+	walletId, err := strconv.Atoi(_walletId)
+	if err != nil {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		return
+	}
+	form := &DepositRequestBody{}
+	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		return
+	}
+	amount, err := decimal.NewFromString(form.Amount)
+	if err != nil {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		return
+	}
+	transaction, ledger, err := h.service.Withdraw(ctx, principal, form.Nonce, int64(walletId), amount)
+	if err != nil {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		return
+	}
+	response_types.OkJsonBody(w, DepositResponseData{
+		Transaction: Transaction{
+			Ledgers: []Ledger{
+				{
+					Id:            ledger.Id,
+					WalletId:      ledger.WalletId,
+					TransactionId: ledger.TransactionId,
+					EntryType:     ledger.EntryType,
+					Amount:        ledger.Amount.String(),
+					CreatedAt:     ledger.CreatedAt,
+					Balance:       ledger.Balance.String(),
+				},
+			},
+			Id:          transaction.Id,
+			RequestorId: transaction.RequestorId,
+			Nonce:       transaction.Nonce,
+			Status:      transaction.Status,
+			Operation:   transaction.Operation,
+			CreatedAt:   transaction.CreatedAt,
+		},
+	})
 }
 
 func mustExtractUsernameFromBasicAuthValue(basicAuthB64 string) (string, error) {

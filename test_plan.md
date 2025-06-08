@@ -43,8 +43,6 @@ Ensure API test server is ready.
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
         - [x] Result: []
-
-
 - [x] [T_0003] - Wallet Creation \
   User Stories: [US-004]
     - [x] [T_0003_001] Create user with `username`
@@ -62,7 +60,7 @@ Ensure API test server is ready.
         - [x] Status: 200
         - [x] Result: `response.wallets.len` == 1
         - [x] Result: `response.wallets[0].currency` == `SGD`
-- [x] [T_0004] - New User: Deposit Error\
+- [x] [T_0004] - New User: Deposit Error (Negative Amount)\
   User Stories: [US-001], [US-005]
     - [x] [Setup] Do [T_0003]
     - [x] [T_0004_001] Deposit `amount` less than or equals to 0 should fail
@@ -74,7 +72,7 @@ Ensure API test server is ready.
         - [x] Status: 200
         - [x] Result: `after.balance`
         - [x] Assert: `before.balance` == `after.balance`
-- [x] [T_0005] - New User: Deposit First Wallet Success\
+- [x] [T_0005] - New User: Deposit Wallet Success (Positive Amount)\
   User Stories: [US-001], [US-005]
     - [x] [Setup] Do [T_0003]
     - [x] [T_0005_001] Deposit positive `amount`
@@ -91,34 +89,13 @@ Ensure API test server is ready.
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
         - [x] Result: Assert `ledgers`= [`deposit`]
-- [ ] [T_0006] - New User: Deposit Success\
-  User Stories: [US-001], [US-005]
-    - [ ] [T_0006_001] Create user with `username`
-        - Endpoint: [API-USER-NEW]
-        - [ ] Status: 200
-    - [ ] [T_0006_002] Get History
-        - Endpoint: [API-USER-TXH]
-        - [ ] Status: 200
-        - [ ] Result: []
-    - [ ] [T_0006_002] Get Balance
-        - Endpoint: [API-USER-BAL]
-        - [ ] Status: 200
-        - [ ] Result: wallets length > 1
-        - [ ] Result: `target_wallet`=`wallets[0]`
-        - [ ] Result: `before.amount`=`wallets[0].amount`
-    - [ ] [T_0006_004] Deposit `amount` less than or equals to 0 should fail
+- [x] [T_0006] - New User: Withdraw Wallet Fail (Insufficient Funds)\
+  User Stories: [US-001], [US-002]
+    - [x] [Setup] Do [T_0003]
+    - [x] [T_0006_001] Withdraw from new wallet `wdr_amount`
         - Endpoint: [API-USER-DEP]
-        - [ ] Status: 400
-        - [ ] Error Message = `"invalid_amount"`
-    - [ ] [T_0006_005] Get Balance
-        - Endpoint: [API-USER-BAL]
-        - [ ] Status: 200
-        - [ ] Result: `after.balance`
-        - [ ] Assert: `before.balance` == `after.balance`
-    - [ ] [T_0006_006] Get History
-        - Endpoint: [API-USER-TXH]
-        - [ ] Status: 200
-        - [ ] Result: []
+        - [x] Status: 400
+        - [x] Result: Error Message = `insufficient_funds`
 - [ ] [T_0006_001] - Withdraw Fail \
   User Stories: [US-002], [US-005]
     - [ ] New User `USER_ID`
