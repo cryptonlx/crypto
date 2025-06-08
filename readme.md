@@ -9,6 +9,7 @@
 ``` /bin/sh
 git clone https://github.com/cryptonlx/crypto.git
 cd crypto
+cp ./pre-commit.sample .git/hooks/pre-commit
 ```
 
 2. PostgreSQL instance
