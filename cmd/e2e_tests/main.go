@@ -492,20 +492,44 @@ func T_0010(client *client.Client) {
 	if len(tRespBody.Data.Transactions) != 2 {
 		log.Fatalf(`[T_0010_003] Transactions want transactions.len = 2 (transfer+deposit). got %d`, len(tRespBody.Data.Transactions))
 	}
+	if tRespBody.Data.Transactions[0].Operation != "transfer" {
+		log.Fatalf(`[T_0010_003] Transactions want transactions[0].operation="transfer". got %s`, tRespBody.Data.Transactions[0].Operation)
+	}
+	if tRespBody.Data.Transactions[0].Status != "success" {
+		log.Fatalf(`[T_0010_003] Transactions want transactions[0].status="success". got %s`, tRespBody.Data.Transactions[0].Status)
+	}
+	if len(tRespBody.Data.Transactions[0].Ledgers) != 1 {
+		log.Fatalf(`[T_0010_003] Transactions want transactions[0].ledgers.len=1. got %s`, len(tRespBody.Data.Transactions[0].Ledgers))
+	}
 
-	log.Printf("%#v\n", tRespBody.Data.Transactions)
+	if tRespBody.Data.Transactions[1].Operation != "deposit" {
+		log.Fatalf(`[T_0010_003] Transactions want transactions[1].operation="deposit". got %s`, tRespBody.Data.Transactions[1].Operation)
+	}
+	if tRespBody.Data.Transactions[1].Status != "success" {
+		log.Fatalf(`[T_0010_003] Transactions want transactions[1].status="success". got %s`, tRespBody.Data.Transactions[1].Status)
+	}
+	if len(tRespBody.Data.Transactions[1].Ledgers) != 1 {
+		log.Fatalf(`[T_0010_003] Transactions want transactions[0].ledgers.len=1. got %s`, len(tRespBody.Data.Transactions[0].Ledgers))
+	}
 
+	tRespBody, tStatusCode, cErr = client.Transactions(username1)
+	if cErr != nil {
+		log.Fatalf("[T_0010_004] Transactions want nil err. responseStatusCode=%d, err=%v", tStatusCode, cErr)
+	}
+	if tStatusCode != http.StatusOK {
+		log.Fatalf(`[T_0010_004] Transactions want 200. Got responseStatusCode=%d, err=%#v`, tStatusCode, cErr)
+	}
+	if len(tRespBody.Data.Transactions) != 1 {
+		log.Fatalf(`[T_0010_004] Transactions want transactions.len = 1 (transfer by others). got %d`, len(tRespBody.Data.Transactions))
+	}
 	if tRespBody.Data.Transactions[0].Operation != "transfer" {
 		log.Fatalf(`[T_0010_004] Transactions want transactions[0].operation="transfer". got %s`, tRespBody.Data.Transactions[0].Operation)
 	}
 	if tRespBody.Data.Transactions[0].Status != "success" {
 		log.Fatalf(`[T_0010_004] Transactions want transactions[0].status="success". got %s`, tRespBody.Data.Transactions[0].Status)
 	}
-	if tRespBody.Data.Transactions[1].Operation != "deposit" {
-		log.Fatalf(`[T_0010_004] Transactions want transactions[1].operation="deposit". got %s`, tRespBody.Data.Transactions[1].Operation)
-	}
-	if tRespBody.Data.Transactions[1].Status != "success" {
-		log.Fatalf(`[T_0010_004] Transactions want transactions[1].status="success". got %s`, tRespBody.Data.Transactions[1].Status)
+	if len(tRespBody.Data.Transactions[0].Ledgers) != 1 {
+		log.Fatalf(`[T_0010_004] Transactions want transactions[0].ledgers.len=1 (transfer by others). got %s`, len(tRespBody.Data.Transactions[0].Ledgers))
 	}
 
 	wallRespBody, wallStatusCode, cErr := client.Wallets(username0)

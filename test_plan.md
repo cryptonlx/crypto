@@ -163,7 +163,7 @@ Ensure API test server is [ready](./readme.md#setup-local-environment) and [exec
     - [x] [T_0010_003] Get `user1` history
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
-        - [x] Result: Assert in order: `ledgers`= []
+        - [x] Result: Assert in order: `ledgers`= [`transfer.status=success`, `deposit.status=success`]
     - [x] [T_0010_004] Get `user2` history
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
