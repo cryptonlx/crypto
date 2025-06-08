@@ -1,3 +1,5 @@
+# Wallet
+
 ## Setup (Local Environment)
 
 ### Requirements
@@ -15,16 +17,16 @@ cd crypto
 
 ### Commands
 
-#### start server
-`DATABASE_URL=<conn_string> go run ./cmd/server`
+#### Start Server
+`DATABASE_URL=<conn_string> go run ./cmd/server` Start HTTP server.
 
-#### run e2e tests
+#### Run e2e Tests
 `SERVER_URL=<server_url> N=<parallel_runs> go run ./cmd/e2e_tests`
 Execute [test_plan](./test_plan.md).
 
-#### Generate Swagger
+#### Generate API Docs
 
-Install [swag](https://github.com/swaggo/swag).
+Install [swag](https://github.com/swaggo/swag) and run:
 
 `swag init --parseDependency --dir ./src/controller/mux/user[,<directories>]`
 

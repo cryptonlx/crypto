@@ -1,8 +1,8 @@
-# Test Plain (HTTP)
+# Test Plan (HTTP)
 
 ## Prerequisites
 
-Ensure API test server is ready.
+Ensure API test server is [ready](./readme.md#setup-local-environment) and [execute](./readme.md#run-e2e-tests) tests.
 
 ## User Stories
 
