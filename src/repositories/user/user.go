@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/cryptonlx/crypto/src/repositories/utils"
@@ -162,30 +164,19 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 		return []TransactionLedgers{}, utils.NilTxError
 	}
 
-	// , , l.transaction_id, l.entry_type, l.amount, l.created_at, l.balance
-	/*
-
-			RequestorId: transaction.Transaction.RequestorId,
-		Nonce:         transaction.Transaction.Nonce,
-		Status:        transaction.Transaction.Status,
-		Operation:     transaction.Transaction.Operation,
-		CreatedAt:     transaction.Transaction.CreatedAt,
-
-	*/
-	//
-	rows, err := tx.Query(ctx, `select t.id,t.requestor_id, t.nonce, t.status, t.operation,t.created_at, COALESCE(json_agg(json_build_object('id',l.wallet_id,'transaction_id',l.transaction_id,'entry_type', l.entry_type,'amount', l.amount,'created_at', l.created_at,'balance', l.balance)), '{}')
-										from ledgers l
-										inner join wallets w on w.id = l.wallet_id
-										inner join user_accounts ua on ua.id = w.user_account_id and ua.id = $1
-										left join transactions t on t.id = l.transaction_id
-										group by t.id
+	rows, err := tx.Query(ctx, `select t.id,t.requestor_id, t.nonce, t.status, t.operation,t.created_at, t.metadata, COALESCE(json_agg(json_build_object('id',l.wallet_id,'transaction_id',l.transaction_id,'entry_type', l.entry_type,'amount', l.amount,'created_at', l.created_at,'balance', l.balance)) filter (where l.id is not null), '[]'::json)
+										from transactions t
+												 left join user_accounts ua on ua.id = t.requestor_id
+												 left join ledgers l on t.id = l.transaction_id
+											where t.requestor_id = $1
+										group by t.id;
 `, userId)
 	if err != nil {
 		return []TransactionLedgers{}, err
 	}
 	defer rows.Close()
 
-	var transactions []TransactionLedgers
+	var transactionLedgers []TransactionLedgers
 	for rows.Next() {
 		var t Transaction
 		var ledgersRaw json.RawMessage
@@ -195,8 +186,10 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 			&t.Status,
 			&t.Operation,
 			&t.CreatedAt,
+			&t.MetaData,
 			&ledgersRaw)
 		var ledgers []Ledger
+		log.Printf("METADATA %v", t.MetaData)
 		err := json.Unmarshal(ledgersRaw, &ledgers)
 		if err != nil {
 			return []TransactionLedgers{}, err
@@ -204,13 +197,13 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 		if err := rows.Err(); err != nil {
 			return []TransactionLedgers{}, err
 		}
-		transactions = append(transactions, TransactionLedgers{
+		transactionLedgers = append(transactionLedgers, TransactionLedgers{
 			Transaction: t,
 			Ledgers:     ledgers,
 		})
 	}
-
-	return transactions, nil
+	log.Printf("transactionLedgers %+v\n", transactionLedgers)
+	return transactionLedgers, nil
 }
 
 type Wallet struct {
@@ -345,8 +338,9 @@ func (r *Repo) Deposit(requestor string, ctx context.Context, nonce int64, walle
 	}
 
 	user, err := r.User(ctx, requestor)
-	transaction, err := r.newTransaction(ctx, nonce, user.Id, "deposit")
+	transaction, err := r.newTransaction(ctx, nonce, user.Id, "deposit", nil)
 	if err != nil {
+		log.Printf("err%v\n", err)
 		return Transaction{}, Ledger{}, err
 	}
 
@@ -393,7 +387,10 @@ func (r *Repo) Withdraw(requestor string, ctx context.Context, nonce int64, wall
 	}
 
 	user, err := r.User(ctx, requestor)
-	transaction, err := r.newTransaction(ctx, nonce, user.Id, "withdraw")
+	transaction, err := r.newTransaction(ctx, nonce, user.Id, "withdraw", map[string]any{
+		"amount":           amount.String(),
+		"source_wallet_id": walletId,
+	})
 	if err != nil {
 		return Transaction{}, Ledger{}, err
 	}
@@ -415,6 +412,10 @@ func (r *Repo) Withdraw(requestor string, ctx context.Context, nonce int64, wall
 	newBalance := userWallet.Wallet.Balance.Sub(amount)
 	err = r.updateBalance(ctx, tx, walletId, newBalance)
 	if err != nil {
+		tsErr := r.UpdateTransactionStatus(context.Background(), transaction.Id, fmt.Sprintf("error_%s", err.Error()))
+		if tsErr != nil {
+			return Transaction{}, Ledger{}, errors.Join(tsErr, err)
+		}
 		return Transaction{}, Ledger{}, err
 	}
 
@@ -462,6 +463,11 @@ func (r *Repo) appendLedger(ctx context.Context, tx pgx.Tx, nonce int64, walletI
 	return l, nil
 }
 
+type TransactionMetaData struct {
+	SourceWalletId *int64           `json:"source_wallet_id" example:"1"`
+	Amount         *decimal.Decimal `json:"amount" example:"1"`
+}
+
 type Transaction struct {
 	Id          int64
 	RequestorId int64
@@ -469,21 +475,25 @@ type Transaction struct {
 	Status      string
 	Operation   string
 	CreatedAt   time.Time
+	MetaData    TransactionMetaData
 }
 
-func (r *Repo) newTransaction(ctx context.Context, nonce, requestorId int64, operation string) (Transaction, error) {
+func (r *Repo) newTransaction(ctx context.Context, nonce, requestorId int64, operation string, metaData map[string]any) (Transaction, error) {
+	if metaData == nil {
+		metaData = make(map[string]any)
+	}
 	tx, err := r.conn.Begin(context.Background())
 	if err != nil {
 		return Transaction{}, err
 	}
 	defer tx.Rollback(ctx)
 
-	row := tx.QueryRow(ctx, `insert into transactions(requestor_id, nonce, status, operation, created_at) values ($1,$2,$3,$4,now())
-	returning id, requestor_id, nonce, status, operation, created_at`,
-		requestorId, nonce, "reserved", operation)
+	row := tx.QueryRow(ctx, `insert into transactions(requestor_id, nonce, status, operation, metadata, created_at) values ($1,$2,$3,$4,$5,now())
+	returning id, requestor_id, nonce, status, operation, created_at, metadata`,
+		requestorId, nonce, "pending", operation, metaData)
 
 	var l Transaction
-	err = row.Scan(&l.Id, &l.RequestorId, &l.Nonce, &l.Status, &l.Operation, &l.CreatedAt)
+	err = row.Scan(&l.Id, &l.RequestorId, &l.Nonce, &l.Status, &l.Operation, &l.CreatedAt, &l.MetaData)
 	if err != nil {
 		return Transaction{}, err
 	}
@@ -517,4 +527,21 @@ func (r *Repo) updateTransactionStatus(ctx context.Context, tx pgx.Tx, id int64,
     UPDATE transactions
     SET status = $1 where id = $2`, status, id)
 	return err
+}
+
+func (r *Repo) UpdateTransactionStatus(ctx context.Context, id int64, status string) error {
+	tx, err := r.conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback(ctx)
+	_, err = tx.Exec(ctx, `
+    UPDATE transactions
+    SET status = $1 where id = $2`, status, id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }

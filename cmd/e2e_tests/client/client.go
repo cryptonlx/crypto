@@ -87,15 +87,21 @@ func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error
 	return httpPost[CreateUserResponseBody](baseUrl, requestBody, nil)
 }
 
+type TransactionMetaData struct {
+	SourceWalletId *int64  `json:"source_wallet_id" example:"1"`
+	Amount         *string `json:"amount" example:"1"`
+}
+
 type Transaction struct {
 	Ledgers []Ledger `json:"ledgers"`
 
-	Id          int64     `json:"id" example:"1"`
-	RequestorId int64     `json:"requestor_id" example:"1"`
-	Nonce       int64     `json:"nonce"`
-	Status      string    `json:"status"`
-	Operation   string    `json:"operation"`
-	CreatedAt   time.Time `json:"created_at"`
+	Id          int64               `json:"id" example:"1"`
+	RequestorId int64               `json:"requestor_id" example:"1"`
+	Nonce       int64               `json:"nonce"`
+	Status      string              `json:"status"`
+	Operation   string              `json:"operation"`
+	CreatedAt   time.Time           `json:"created_at"`
+	MetaData    TransactionMetaData `json:"metadata"`
 }
 
 type TransactionResponseData struct {
@@ -138,7 +144,7 @@ func (c *Client) Deposit(username string, walletId int64, amount decimal.Decimal
 	baseUrl := c.serverUrl + fmt.Sprintf("/wallet/%d/deposit", walletId)
 	requestBody := map[string]interface{}{
 		"amount": amount.String(),
-		"nonce":  time.Now().Unix(),
+		"nonce":  time.Now().UnixMilli(),
 	}
 
 	return httpPost[DepositResponseBody](baseUrl, requestBody, []string{username, ""})
@@ -154,7 +160,7 @@ func (c *Client) Withdraw(username string, walletId int64, amount decimal.Decima
 	baseUrl := c.serverUrl + fmt.Sprintf("/wallet/%d/withdraw", walletId)
 	requestBody := map[string]interface{}{
 		"amount": amount.String(),
-		"nonce":  time.Now().Unix(),
+		"nonce":  time.Now().UnixMilli(),
 	}
 
 	return httpPost[WithdrawResponseBody](baseUrl, requestBody, []string{username, ""})

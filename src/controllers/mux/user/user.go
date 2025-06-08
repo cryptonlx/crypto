@@ -131,6 +131,24 @@ func (h Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	response_types.OkJsonBody(w, CreateUserResponseData{User: &c})
 }
 
+type TransactionMetaData struct {
+	SourceWalletId *int64  `json:"source_wallet_id" example:"1"`
+	Amount         *string `json:"amount" example:"1"`
+}
+
+type Transaction struct {
+	Ledgers []Ledger `json:"ledgers"`
+
+	Id          int64     `json:"id" example:"1"`
+	RequestorId int64     `json:"requestor_id" example:"1"`
+	Nonce       int64     `json:"nonce"`
+	Status      string    `json:"status"`
+	Operation   string    `json:"operation"`
+	CreatedAt   time.Time `json:"created_at"`
+
+	TransactionMetaData `json:"metadata"`
+}
+
 type UserTransactions struct {
 	User         User
 	Transactions []Transaction
@@ -157,8 +175,7 @@ func (h Handlers) Transactions(w http.ResponseWriter, r *http.Request) {
 
 	transactionLedgers, err := h.service.GetUserTransactionsByUserName(r.Context(), userName)
 	if err != nil {
-
-		log.Printf("%v\n", err)
+		log.Printf("transactionLedgers err %v\n", err)
 		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
@@ -178,14 +195,24 @@ func (h Handlers) Transactions(w http.ResponseWriter, r *http.Request) {
 			})
 		}
 
+		t := transaction.Transaction
+		var amount *string
+		if t.MetaData.Amount != nil {
+			amountP := t.MetaData.Amount.String()
+			amount = &amountP
+		}
 		transactions = append(transactions, Transaction{
 			Ledgers:     ledgers,
-			Id:          transaction.Transaction.Id,
-			RequestorId: transaction.Transaction.RequestorId,
-			Nonce:       transaction.Transaction.Nonce,
-			Status:      transaction.Transaction.Status,
-			Operation:   transaction.Transaction.Operation,
-			CreatedAt:   transaction.Transaction.CreatedAt,
+			Id:          t.Id,
+			RequestorId: t.RequestorId,
+			Nonce:       t.Nonce,
+			Status:      t.Status,
+			Operation:   t.Operation,
+			CreatedAt:   t.CreatedAt,
+			TransactionMetaData: TransactionMetaData{
+				SourceWalletId: t.MetaData.SourceWalletId,
+				Amount:         amount,
+			},
 		})
 	}
 	response_types.OkJsonBody(w, TransactionsResponseData{
@@ -256,17 +283,6 @@ type Ledger struct {
 	Amount    string    `json:"amount" example:"40.22"`
 	CreatedAt time.Time `json:"created_at"`
 	Balance   string    `json:"balance" example:"2.234"`
-}
-
-type Transaction struct {
-	Ledgers []Ledger `json:"ledgers"`
-
-	Id          int64     `json:"id" example:"1"`
-	RequestorId int64     `json:"requestor_id" example:"1"`
-	Nonce       int64     `json:"nonce"`
-	Status      string    `json:"status"`
-	Operation   string    `json:"operation"`
-	CreatedAt   time.Time `json:"created_at"`
 }
 
 type DepositResponseData struct {
@@ -388,6 +404,13 @@ func (h Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
+
+	var amountP *string
+	if transaction.MetaData.Amount != nil {
+		_amount := transaction.MetaData.Amount.String()
+		amountP = &_amount
+	}
+
 	response_types.OkJsonBody(w, DepositResponseData{
 		Transaction: Transaction{
 			Ledgers: []Ledger{
@@ -407,6 +430,10 @@ func (h Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 			Status:      transaction.Status,
 			Operation:   transaction.Operation,
 			CreatedAt:   transaction.CreatedAt,
+			TransactionMetaData: TransactionMetaData{
+				SourceWalletId: transaction.MetaData.SourceWalletId,
+				Amount:         amountP,
+			},
 		},
 	})
 }
