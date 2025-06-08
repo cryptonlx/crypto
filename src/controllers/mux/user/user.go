@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -161,8 +160,8 @@ type TransactionsResponseData struct {
 type TransactionsResponseBody = Response[TransactionsResponseData]
 
 // Transactions godoc
-// @Summary      Get transactions of user's wallets.
-// @Description  Get transactions of user's wallets.
+// @Summary      Get transactions of user's wallets sorted by newest.
+// @Description  Get transactions of user's wallets sorted by newest.
 // @Tags         user
 // @Accept       application/json
 // @Produce      application/json
@@ -175,7 +174,6 @@ func (h Handlers) Transactions(w http.ResponseWriter, r *http.Request) {
 
 	transactionLedgers, err := h.service.GetUserTransactionsByUserName(r.Context(), userName)
 	if err != nil {
-		log.Printf("transactionLedgers err %v\n", err)
 		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
@@ -356,6 +354,11 @@ func (h Handlers) Deposit(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type WithdrawRequestBody struct {
+	Amount string `json:"amount" example:"10.23"`
+	Nonce  int64  `json:"nonce" example:"1749286345000"`
+}
+
 type WithdrawResponseData struct {
 	Transaction `json:"transaction"`
 }
@@ -389,7 +392,7 @@ func (h Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
-	form := &DepositRequestBody{}
+	form := &WithdrawRequestBody{}
 	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
 		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
 		return

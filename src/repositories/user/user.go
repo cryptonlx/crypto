@@ -169,7 +169,7 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 												 left join user_accounts ua on ua.id = t.requestor_id
 												 left join ledgers l on t.id = l.transaction_id
 											where t.requestor_id = $1
-										group by t.id;
+										group by t.id order by t.created_at desc
 `, userId)
 	if err != nil {
 		return []TransactionLedgers{}, err
@@ -189,7 +189,6 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 			&t.MetaData,
 			&ledgersRaw)
 		var ledgers []Ledger
-		log.Printf("METADATA %v", t.MetaData)
 		err := json.Unmarshal(ledgersRaw, &ledgers)
 		if err != nil {
 			return []TransactionLedgers{}, err
@@ -202,7 +201,6 @@ func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId in
 			Ledgers:     ledgers,
 		})
 	}
-	log.Printf("transactionLedgers %+v\n", transactionLedgers)
 	return transactionLedgers, nil
 }
 
@@ -338,6 +336,9 @@ func (r *Repo) Deposit(requestor string, ctx context.Context, nonce int64, walle
 	}
 
 	user, err := r.User(ctx, requestor)
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
 	transaction, err := r.newTransaction(ctx, nonce, user.Id, "deposit", nil)
 	if err != nil {
 		log.Printf("err%v\n", err)
@@ -387,6 +388,9 @@ func (r *Repo) Withdraw(requestor string, ctx context.Context, nonce int64, wall
 	}
 
 	user, err := r.User(ctx, requestor)
+	if err != nil {
+		return Transaction{}, Ledger{}, err
+	}
 	transaction, err := r.newTransaction(ctx, nonce, user.Id, "withdraw", map[string]any{
 		"amount":           amount.String(),
 		"source_wallet_id": walletId,
@@ -394,7 +398,6 @@ func (r *Repo) Withdraw(requestor string, ctx context.Context, nonce int64, wall
 	if err != nil {
 		return Transaction{}, Ledger{}, err
 	}
-
 	tx, err := r.conn.Begin(ctx)
 	if err != nil {
 		return Transaction{}, Ledger{}, err

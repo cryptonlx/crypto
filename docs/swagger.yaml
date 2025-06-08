@@ -34,13 +34,24 @@ definitions:
         items:
           $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Ledger'
         type: array
+      metadata:
+        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.TransactionMetaData'
       nonce:
         type: integer
       operation:
         type: string
+      requestor_id:
+        example: 1
+        type: integer
       status:
         type: string
-      user_account_id:
+    type: object
+  github_com_cryptonlx_crypto_src_controllers_mux_user.TransactionMetaData:
+    properties:
+      amount:
+        example: "1"
+        type: string
+      source_wallet_id:
         example: 1
         type: integer
     type: object
@@ -181,6 +192,27 @@ definitions:
           $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction'
         type: array
     type: object
+  user.WithdrawRequestBody:
+    properties:
+      amount:
+        example: "10.23"
+        type: string
+      nonce:
+        example: 1749286345000
+        type: integer
+    type: object
+  user.WithdrawResponseBody:
+    properties:
+      data:
+        $ref: '#/definitions/user.WithdrawResponseData'
+      error:
+        type: string
+    type: object
+  user.WithdrawResponseData:
+    properties:
+      transaction:
+        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction'
+    type: object
 info:
   contact: {}
 paths:
@@ -214,7 +246,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get transactions of user's wallets.
+      description: Get transactions of user's wallets sorted by newest.
       parameters:
       - description: username
         in: path
@@ -232,7 +264,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/user.ErrorResponseBody'
-      summary: Get transactions of user's wallets.
+      summary: Get transactions of user's wallets sorted by newest.
       tags:
       - user
   /user/{username}/wallets:
@@ -317,6 +349,39 @@ paths:
       security:
       - BasicAuth: []
       summary: Deposit to wallet
+      tags:
+      - wallet
+  /wallet/{wallet_id}/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: Withdraw from wallet
+      parameters:
+      - description: wallet id
+        in: path
+        name: wallet_id
+        required: true
+        type: string
+      - description: Create Withdraw Request Body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.WithdrawRequestBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.WithdrawResponseBody'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponseBody'
+      security:
+      - BasicAuth: []
+      summary: Withdraw from wallet
       tags:
       - wallet
 swagger: "2.0"

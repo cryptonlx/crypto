@@ -100,14 +100,20 @@ Ensure API test server is ready.
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
         - [x] Result: Assert `ledgers`= [`withdraw.status=error, metadata.source_wallet_id, metadata.amount`]
-- [ ] [T_0006] - New User: Withdraw Wallet Success\
-  User Stories: [US-002], [US-005]
-    - [ ] [Setup] Do [T_0003]
-    - [ ] [T_0006_001] Withdraw from new wallet `wdr_amount`
+- [x] [T_0007] - New User: Withdraw Wallet Success\
+  User Stories: [US-001],[US-002], [US-005]
+    - [x] [Setup] Do [T_0003]
+    - [x] [T_0007_001] Deposit `deposit_amount`=60.2
         - Endpoint: [API-USER-DEP]
-        - [ ] Status: 400
-        - [ ] Result: Error Message = `insufficient_funds`
-    - [ ] [T_0006_003] Get History
+        - [x] Status: 200
+    - [x] [T_0007_002] Withdraw `wdr_amount`=50.1
+        - Endpoint: [API-USER-DEP]
+        - [x] Status: 200
+    - [x] [T_0007_003] Get Balance
         - Endpoint: [API-USER-TXH]
-        - [ ] Status: 200
-        - [ ] Result: Assert `ledgers`= [`withdraw.error`]
+        - [x] Status: 200
+        - [x] Result: `wallet.balance`=10.1
+    - [x] [T_0007_004] Get History
+        - Endpoint: [API-USER-TXH]
+        - [x] Status: 200
+        - [x] Result: Assert in order: `ledgers`= [`withdraw.status=success`, `deposit.status=success`]

@@ -48,10 +48,15 @@ func httpPost[T ResponseBody[V], V any](baseUrl string, requestBody map[string]i
 	return t, resp.StatusCode, clientError
 }
 
-func httpGet[T ResponseBody[V], V any](fullURL string, queryParams map[string]interface{}) (jsonResponseBody T, statusCode int, _clientError error) {
+func httpGet[T ResponseBody[V], V any](httpClient *http.Client, fullURL string, queryParams map[string]interface{}) (jsonResponseBody T, statusCode int, _clientError error) {
 	var t T
 
-	resp, clientError := http.Get(fullURL)
+	req, clientError := http.NewRequest("GET", fullURL, nil)
+	if clientError != nil {
+		return t, 0, clientError
+	}
+
+	resp, clientError := httpClient.Do(req)
 	if clientError != nil {
 		return t, 0, clientError
 	}

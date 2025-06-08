@@ -57,7 +57,7 @@ const docTemplate = `{
         },
         "/user/{username}/transactions": {
             "get": {
-                "description": "Get transactions of user's wallets.",
+                "description": "Get transactions of user's wallets sorted by newest.",
                 "consumes": [
                     "application/json"
                 ],
@@ -67,7 +67,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "Get transactions of user's wallets.",
+                "summary": "Get transactions of user's wallets sorted by newest.",
                 "parameters": [
                     {
                         "type": "string",
@@ -222,6 +222,58 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/wallet/{wallet_id}/withdraw": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Withdraw from wallet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallet"
+                ],
+                "summary": "Withdraw from wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "wallet id",
+                        "name": "wallet_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create Withdraw Request Body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.WithdrawRequestBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.WithdrawResponseBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponseBody"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -274,16 +326,32 @@ const docTemplate = `{
                         "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Ledger"
                     }
                 },
+                "metadata": {
+                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.TransactionMetaData"
+                },
                 "nonce": {
                     "type": "integer"
                 },
                 "operation": {
                     "type": "string"
                 },
+                "requestor_id": {
+                    "type": "integer",
+                    "example": 1
+                },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_cryptonlx_crypto_src_controllers_mux_user.TransactionMetaData": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "1"
                 },
-                "user_account_id": {
+                "source_wallet_id": {
                     "type": "integer",
                     "example": 1
                 }
@@ -493,6 +561,38 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction"
                     }
+                }
+            }
+        },
+        "user.WithdrawRequestBody": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "10.23"
+                },
+                "nonce": {
+                    "type": "integer",
+                    "example": 1749286345000
+                }
+            }
+        },
+        "user.WithdrawResponseBody": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/user.WithdrawResponseData"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.WithdrawResponseData": {
+            "type": "object",
+            "properties": {
+                "transaction": {
+                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction"
                 }
             }
         }

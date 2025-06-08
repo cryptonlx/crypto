@@ -1,9 +1,7 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"time"
 
@@ -11,12 +9,19 @@ import (
 )
 
 type Client struct {
-	serverUrl string
+	serverUrl  string
+	httpClient *http.Client
 }
 
 func NewClient(serverUrl string) (*Client, error) {
 	return &Client{
 		serverUrl: serverUrl,
+		httpClient: &http.Client{
+			Transport:     nil,
+			CheckRedirect: nil,
+			Jar:           nil,
+			Timeout:       3 * time.Second,
+		},
 	}, nil
 }
 
@@ -32,38 +37,14 @@ type WalletBalanceResponseData struct {
 	User    `json:"user"`
 }
 
-type WalletBalanceResponseBody struct {
-	Error *string                   `json:"error"`
-	Data  WalletBalanceResponseData `json:"data"`
-}
+type WalletBalanceResponseBody = ResponseBody[WalletBalanceResponseData]
 
 func (c *Client) Wallets(username string) (_responseBody WalletBalanceResponseBody, _httpStatusCode int, _clientError error) {
 	if username == "" {
 		return WalletBalanceResponseBody{}, 0, fmt.Errorf("malformedclient request. abort sending")
 	}
 	baseUrl := c.serverUrl + "/user/" + username + "/wallets"
-
-	resp, err := http.Get(baseUrl)
-	if err != nil {
-		return WalletBalanceResponseBody{}, 0, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-
-	//log.Println(string(body))
-	//log.Println(resp.StatusCode)
-	if err != nil {
-		return WalletBalanceResponseBody{}, 0, err
-	}
-
-	var b WalletBalanceResponseBody
-	err = json.Unmarshal(body, &b)
-	if err != nil {
-		return WalletBalanceResponseBody{}, 0, err
-	}
-
-	return b, resp.StatusCode, nil
+	return httpGet[WalletBalanceResponseBody](c.httpClient, baseUrl, nil)
 }
 
 type CreatedUser struct {
@@ -115,7 +96,7 @@ func (c *Client) Transactions(username string) (TransactionResponseBody, int, er
 		return TransactionResponseBody{}, 0, fmt.Errorf("malformedclient request. abort sending")
 	}
 	baseUrl := c.serverUrl + "/user/" + username + "/transactions"
-	return httpGet[TransactionResponseBody](baseUrl, nil)
+	return httpGet[TransactionResponseBody](c.httpClient, baseUrl, nil)
 }
 
 type User struct {

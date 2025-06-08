@@ -18,6 +18,7 @@ import (
 	userservice "github.com/cryptonlx/crypto/src/service/user"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/time/rate"
 
 	_ "github.com/cryptonlx/crypto/docs"
 	"github.com/swaggo/http-swagger"
@@ -49,11 +50,26 @@ func main() {
 
 	go func() {
 		log.Println("Listening on " + configParams.ServerParams.Port)
-		http.ListenAndServe(configParams.ServerParams.Port, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r = httplog.ContextualizeHttpRequest(r)
-			log.Printf("%s [request received]\n", httplog.SPrintHttpRequestPrefix(r))
-			mux.ServeHTTP(w, r)
-		}))
+		limiter := rate.NewLimiter(1000, 1000)
+
+		server := &http.Server{
+			Addr: configParams.ServerParams.Port,
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if !limiter.Allow() {
+					http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+					return
+				}
+				r = httplog.ContextualizeHttpRequest(r)
+				log.Printf("%s [request received]\n", httplog.SPrintHttpRequestPrefix(r))
+				mux.ServeHTTP(w, r)
+			}),
+			ReadTimeout:  5 * time.Second,
+			WriteTimeout: 5 * time.Second,
+			IdleTimeout:  5 * time.Second,
+		}
+		if err := server.ListenAndServe(); err != nil {
+			log.Printf("ListenAndServe err %v\n", err)
+		}
 	}()
 
 	recvSig := <-interruptSignal

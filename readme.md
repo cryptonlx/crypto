@@ -54,7 +54,7 @@ The tests are end-to-end and will require external connections (db etc.).
 
    `/GET /user/{username}/wallets`
 
-5. **[API-USER-TXH]** Get user's transaction history.
+5. **[API-USER-TXH]** Get user's transaction history sorted by newest.
 
    `/GET /user/{username}/transactions`
 
@@ -106,8 +106,8 @@ The tests are end-to-end and will require external connections (db etc.).
             cluster.
       - Support for asynchronous services.
           - For example, notify on operation fail/success, balance change etc.
-- Payload selection
-    - List responses should have pagination parameters to return subset as result.
+- List Payload Selection
+    - List responses should have pagination and sorting parameters to return subset as result.
 - Greater API Flexibility
     - Currency Value and Unit Type
         - Support for cross-currency transfer.
