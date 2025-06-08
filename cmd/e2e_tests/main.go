@@ -57,6 +57,7 @@ func Exec(client *client.Client) {
 	T_0005(client)
 	T_0006(client)
 	T_0007(client)
+	T_0008(client)
 }
 
 func Ping(client *client.Client) {
@@ -148,11 +149,11 @@ func T_0002(client *client.Client) {
 }
 
 func T_0003(client *client.Client) {
-	SetupUserAndWalletCreation(client, "T_0003")
+	SetupUserAndWalletCreation(client, "T_0003", "SGD")
 }
 
 func T_0004(client *client.Client) {
-	username, wallets := SetupUserAndWalletCreation(client, "T_0004")
+	username, wallets := SetupUserAndWalletCreation(client, "T_0004", "SGD")
 
 	wallet := wallets[0]
 	balanceBefore := wallet.Balance
@@ -181,7 +182,7 @@ func T_0004(client *client.Client) {
 }
 
 func T_0005(client *client.Client) {
-	username, wallets := SetupUserAndWalletCreation(client, "T_0005")
+	username, wallets := SetupUserAndWalletCreation(client, "T_0005", "SGD")
 
 	wallet := wallets[0]
 
@@ -246,7 +247,7 @@ func T_0005(client *client.Client) {
 }
 
 func T_0006(client *client.Client) {
-	username, wallets := SetupUserAndWalletCreation(client, "T_0006")
+	username, wallets := SetupUserAndWalletCreation(client, "T_0006", "SGD")
 
 	wallet := wallets[0]
 	dRespBody, dStatusCode, cErr := client.Withdraw(username, wallet.Id, decimal.NewFromFloat(50.1))
@@ -293,7 +294,7 @@ func T_0006(client *client.Client) {
 }
 
 func T_0007(client *client.Client) {
-	username, wallets := SetupUserAndWalletCreation(client, "T_0007")
+	username, wallets := SetupUserAndWalletCreation(client, "T_0007", "SGD")
 
 	wallet := wallets[0]
 
@@ -347,7 +348,62 @@ func T_0007(client *client.Client) {
 	}
 }
 
-func SetupUserAndWalletCreation(client *client.Client, logPrefix string) (username string, wallets []client.Wallet) {
+func T_0008(client *client.Client) {
+	_, _ = SetupUserAndWalletCreation(client, "T_0007", "SGD")
+	_, _ = SetupUserAndWalletCreation(client, "T_0007", "USD")
+
+	//wallet := wallets[0]
+	//_, dStatusCode, cErr := client.Deposit(username, wallet.Id, decimal.NewFromFloat(60.2))
+	//if cErr != nil {
+	//	log.Fatalf(`[T_0008_001] Deposit transaction want nil err, got error %v`, cErr)
+	//}
+	//if dStatusCode != http.StatusOK {
+	//	log.Fatalf("[T_0008_001] Deposit want 200. responseStatusCode=%d, err=%v", dStatusCode, cErr)
+	//}
+	//
+	//wRespBody, wStatusCode, cErr := client.Withdraw(username, wallet.Id, decimal.NewFromFloat(50.1))
+	//if cErr != nil {
+	//	log.Fatalf(`[T_0008_002] Withdraw transaction want nil err, got error %v`, cErr)
+	//}
+	//if wStatusCode != http.StatusOK {
+	//	log.Fatalf("[T_0008_002] Withdraw want 400. responseStatusCode=%d, err=%v", wStatusCode, cErr)
+	//}
+	//if wRespBody.Data.Transaction.Id == 0 {
+	//	log.Fatalf(`[T_0008_002] Withdraw want transaction.Id. got 0.`)
+	//}
+	//
+	//responseBody, walStatusCode, cErr := client.Wallets(username)
+	//if cErr != nil {
+	//	log.Fatalf("[T_0008_003] Wallets want nil err. responseStatusCode=%d, err=%v", wStatusCode, cErr)
+	//}
+	//if walStatusCode != http.StatusOK {
+	//	log.Fatalf("[T_0008_003] Wallets want 400. responseStatusCode=%d, err=%v", wStatusCode, cErr)
+	//}
+	//
+	//walletAfterTx := responseBody.Data.Wallets[0]
+	//if walletAfterTx.Balance != "10.1" {
+	//	log.Fatalf(`[T_0008_003] Wallets after transactions want balance=%s. got %s.`, "10.1", walletAfterTx.Balance)
+	//}
+	//
+	//tRespBody, tStatusCode, cErr := client.Transactions(username)
+	//if cErr != nil {
+	//	log.Fatalf("[T_0008_004] Wallets want nil err. responseStatusCode=%d, err=%v", tStatusCode, cErr)
+	//}
+	//if tStatusCode != http.StatusOK {
+	//	log.Fatalf(`[T_0008_004] Transactions want 200. Got responseStatusCode=%d, err=%#v`, tStatusCode, cErr)
+	//}
+	//if len(tRespBody.Data.Transactions) != 2 {
+	//	log.Fatalf(`[T_0008_004] Transactions want transactions.len > 2. got %d`, len(tRespBody.Data.Transactions))
+	//}
+	//if tRespBody.Data.Transactions[0].Operation != "withdraw" {
+	//	log.Fatalf(`[T_0008_004] Transactions want transactions[0].operation="withdraw". got %s`, tRespBody.Data.Transactions[0].Operation)
+	//}
+	//if tRespBody.Data.Transactions[1].Operation != "deposit" {
+	//	log.Fatalf(`[T_0008_004] Transactions want transactions[0].operation="deposit". got %s`, tRespBody.Data.Transactions[0].Operation)
+	//}
+}
+
+func SetupUserAndWalletCreation(client *client.Client, logPrefix string, currency string) (username string, wallets []client.Wallet) {
 	username = NewRandomUserName(logPrefix, 6, 0)
 	createUserResponseData, responseStatusCode, err := client.CreateUser(username)
 	if responseStatusCode != http.StatusOK {
@@ -377,7 +433,7 @@ func SetupUserAndWalletCreation(client *client.Client, logPrefix string) (userna
 		log.Fatalf(`[%s_002] SETUP Wallets want no wallets. Got len=%d, err=%#v`, logPrefix, len(responseBody.Data.Wallets), err)
 	}
 
-	createWalletResponseBody, createWalletResponseStatusCode, err := client.CreateWallet(username, "SGD")
+	createWalletResponseBody, createWalletResponseStatusCode, err := client.CreateWallet(username, currency)
 	if createWalletResponseStatusCode != http.StatusOK {
 		log.Fatalf(`[%s_003] SETUP CreateWallet want 200. Got body.Err=%s, statusCode=%d, err=%#v`, logPrefix, *createWalletResponseBody.Error, createWalletResponseStatusCode, err)
 	}
@@ -400,8 +456,8 @@ func SetupUserAndWalletCreation(client *client.Client, logPrefix string) (userna
 		log.Fatalf(`[%s_004] SETUP Wallets want some wallets. Got len=%d, err=%#v`, logPrefix, len(responseBody.Data.Wallets), err)
 	}
 
-	if responseBody.Data.Wallets[0].Currency != "SGD" {
-		log.Fatalf(`[%s_004] SETUP Wallets want currency as SGD. Got currency=%s, err=%#v`, logPrefix, responseBody.Data.Wallets[0].Currency, err)
+	if responseBody.Data.Wallets[0].Currency != currency {
+		log.Fatalf(`[%s_004] SETUP Wallets want currency=%s. Got currency=%s, err=%#v`, logPrefix, currency, responseBody.Data.Wallets[0].Currency, err)
 	}
 
 	return username, responseBody.Data.Wallets
