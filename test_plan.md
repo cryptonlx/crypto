@@ -117,20 +117,31 @@ Ensure API test server is [ready](./readme.md#setup-local-environment) and [exec
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
         - [x] Result: Assert in order: `ledgers`= [`withdraw.status=success`, `deposit.status=success`]
-- [x] [T_0008] - Transfer \
+- [ ] [T_0008] - Transfer \
   User Stories: [US-001],[US-002], [US-005]
-    - [x] [Setup] Do [T_0003]
-    - [x] [T_0008_001] Deposit `deposit_amount`=60.2
+    - [ ] [Setup]
+        - [ ] get `user1.wallet` <- Do [T_0003]
+        - [ ] get `user2.wallet` <- Do [T_0003]
+
+    - [ ] [T_0008_001] Deposit to `user1.wallet`. `amount`=60.2
         - Endpoint: [API-USER-DEP]
-        - [x] Status: 200
-    - [x] [T_0008_002] Withdraw `wdr_amount`=50.1
-        - Endpoint: [API-USER-WDR]
-        - [x] Status: 200
-    - [x] [T_0008_003] Get Balance
+        - [ ] Status: 200
+    - [ ] [T_0008_002] Transfer `amount` to `user2.wallet`
+        - Endpoint: [API-USER-TRF]
+        - [ ] Status: 200
+    - [ ] [T_0008_003] Get `user1.wallet` balance
         - Endpoint: [API-USER-TXH]
-        - [x] Status: 200
-        - [x] Result: `wallet.balance`=10.1
-    - [x] [T_0008_004] Get History
+        - [ ] Status: 200
+        - [ ] Result: `wallet.balance`=0
+    - [ ] [T_0008_004] Get `user2.wallet` balance
         - Endpoint: [API-USER-TXH]
-        - [x] Status: 200
-        - [x] Result: Assert in order: `ledgers`= [`withdraw.status=success`, `deposit.status=success`]
+        - [ ] Status: 200
+        - [ ] Result: `wallet.balance`=60.2
+    - [ ] [T_0008_004] Get `user1` history
+        - Endpoint: [API-USER-TXH]
+        - [ ] Status: 200
+        - [ ] Result: Assert in order: `ledgers`= [`transfer.status=success`, `deposit.status=success`]
+    - [ ] [T_0008_005] Get `user2` history
+        - Endpoint: [API-USER-TXH]
+        - [ ] Status: 200
+        - [ ] Result: Assert in order: `ledgers`= [`transfer.status=success`]
