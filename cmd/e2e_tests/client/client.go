@@ -167,6 +167,22 @@ func (c *Client) CreateWallet(username string, currency string) (CreateWalletRes
 	return httpPost[CreateWalletResponseBody](baseUrl, requestBody, nil)
 }
 
+type TransferResponseData struct {
+	Transaction `json:"transaction"`
+}
+
+type TransferResponseBody = ResponseBody[TransferResponseData]
+
+func (c *Client) Transfer(username string, fromWalletId int64, toWalletId int64, amount decimal.Decimal) (TransferResponseBody, int, error) {
+	baseUrl := c.serverUrl + fmt.Sprintf("/wallet/%d/transfer", fromWalletId)
+	requestBody := map[string]interface{}{
+		"destination_wallet_id": toWalletId,
+		"amount":                amount.String(),
+		"nonce":                 time.Now().UnixMilli(),
+	}
+	return httpPost[TransferResponseBody](baseUrl, requestBody, []string{username, ""})
+}
+
 type ResponseBody[T any] struct {
 	Error *string `json:"error"`
 	Data  T       `json:"data"`

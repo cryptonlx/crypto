@@ -87,3 +87,14 @@ func (s Service) Withdraw(ctx context.Context, requestor string, nonce int64, wa
 
 	return s.repo.Withdraw(requestor, ctx, nonce, walletId, amount)
 }
+
+func (s Service) Transfer(ctx context.Context, requestor string, nonce int64, sourceWalletId, destinationWalletId int64, amount decimal.Decimal) (userrepo.Transaction, []userrepo.Ledger, error) {
+	if !amount.IsPositive() {
+		return userrepo.Transaction{}, []userrepo.Ledger{}, errors.New("invalid_amount")
+	}
+	if nonce == 0 {
+		return userrepo.Transaction{}, []userrepo.Ledger{}, errors.New("invalid_nonce")
+	}
+
+	return s.repo.Transfer(requestor, ctx, nonce, sourceWalletId, destinationWalletId, amount)
+}

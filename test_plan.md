@@ -125,10 +125,14 @@ Ensure API test server is [ready](./readme.md#setup-local-environment) and [exec
     - [x] [T_0008_001] Deposit to `user1.wallet`. `amount`=60.2
         - Endpoint: [API-USER-DEP]
         - [x] Status: 200
-    - [ ] [T_0008_002] Transfer `amount` to `user2.wallet`
+    - [x] [T_0008_002] Transfer `amount` to `user2.wallet`
         - Endpoint: [API-USER-TRF]
-        - [ ] Status: 400
-        - [ ] Error Message = `currency_mismatch`
+        - [x] Status: 400
+        - [x] Error Message = `currency_mismatch`
+    - [x] [T_0008_003] Get `user1` History
+        - Endpoint: [API-USER-TXH]
+        - [x] Status: 200
+        - [x] `ledgers` = [`transfer.status=error_currency_mismatch`, `deposit.status=success`]
 - [ ] [T_0009] - Transfer Success\
   User Stories: [US-001], [US-002], [US-003], [US-004], [US-005]
     - [ ] [Setup]

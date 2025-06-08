@@ -441,6 +441,98 @@ func (h Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type TransferRequestBody struct {
+	Amount              string `json:"amount" example:"10.23"`
+	Nonce               int64  `json:"nonce" example:"1749286345000"`
+	DestinationWalletId int64  `json:"destination_wallet_id" example:"2"`
+}
+
+type TransferResponseData struct {
+	Transaction `json:"transaction"`
+}
+
+type TransferResponseBody = Response[TransferResponseData]
+
+// Transfer Create godoc
+// @Summary      Transfer to another wallet.
+// @Description  Transfer to another wallet.
+// @Tags         wallet
+// @Security     BasicAuth
+// @Accept       application/json
+// @Produce      application/json
+// @Param        wallet_id   					path      string  true  "wallet id"
+// @Param        request body TransferRequestBody true "Create Transfer Request Body"
+// @Success      200  {object}  TransferResponseBody
+// @Failure      500  {object}  ErrorResponseBody
+// @Router       /wallet/{wallet_id}/transfer [post]
+func (h Handlers) Transfer(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	basicAuthB64, _ := ctx.Value("BASIC_AUTH").(string)
+	principal, err := mustExtractUsernameFromBasicAuthValue(basicAuthB64)
+	if err != nil {
+		response_types.ErrorNoBody(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	_walletId := r.PathValue("wallet_id")
+	walletId, err := strconv.Atoi(_walletId)
+	if err != nil {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		return
+	}
+	form := &TransferRequestBody{}
+	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		return
+	}
+	amount, err := decimal.NewFromString(form.Amount)
+	if err != nil {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		return
+	}
+
+	transaction, ledgersS, err := h.service.Transfer(ctx, principal, form.Nonce, int64(walletId), form.DestinationWalletId, amount)
+	if err != nil {
+		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		return
+	}
+
+	var amountP *string
+	if transaction.MetaData.Amount != nil {
+		_amount := transaction.MetaData.Amount.String()
+		amountP = &_amount
+	}
+
+	ledgers := make([]Ledger, 0, len(ledgersS))
+	for _, ledger := range ledgersS {
+		ledgers = append(ledgers, Ledger{
+			Id:            ledger.Id,
+			WalletId:      ledger.WalletId,
+			TransactionId: ledger.TransactionId,
+			EntryType:     ledger.EntryType,
+			Amount:        ledger.Amount.String(),
+			CreatedAt:     ledger.CreatedAt,
+			Balance:       ledger.Balance.String(),
+		})
+	}
+
+	response_types.OkJsonBody(w, DepositResponseData{
+		Transaction: Transaction{
+			Ledgers:     ledgers,
+			Id:          transaction.Id,
+			RequestorId: transaction.RequestorId,
+			Nonce:       transaction.Nonce,
+			Status:      transaction.Status,
+			Operation:   transaction.Operation,
+			CreatedAt:   transaction.CreatedAt,
+			TransactionMetaData: TransactionMetaData{
+				SourceWalletId: transaction.MetaData.SourceWalletId,
+				Amount:         amountP,
+			},
+		},
+	})
+}
+
 func mustExtractUsernameFromBasicAuthValue(basicAuthB64 string) (string, error) {
 	basicAuth, err := base64.StdEncoding.DecodeString(basicAuthB64)
 	if err != nil {

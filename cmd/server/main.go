@@ -47,6 +47,7 @@ func main() {
 	mux.HandleFunc("POST /wallet", userHandlers.CreateWallet)
 	mux.HandleFunc("POST /wallet/{wallet_id}/deposit", userHandlers.Deposit)
 	mux.HandleFunc("POST /wallet/{wallet_id}/withdraw", userHandlers.Withdraw)
+	mux.HandleFunc("POST /wallet/{wallet_id}/transfer", userHandlers.Transfer)
 
 	go func() {
 		log.Println("Listening on " + configParams.ServerParams.Port)

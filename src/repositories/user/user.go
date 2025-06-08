@@ -339,7 +339,10 @@ func (r *Repo) Deposit(requestor string, ctx context.Context, nonce int64, walle
 	if err != nil {
 		return Transaction{}, Ledger{}, err
 	}
-	transaction, err := r.newTransaction(ctx, nonce, user.Id, "deposit", nil)
+	transaction, err := r.newTransaction(ctx, nonce, user.Id, "deposit", map[string]any{
+		"amount":           amount.String(),
+		"source_wallet_id": walletId,
+	})
 	if err != nil {
 		log.Printf("err%v\n", err)
 		return Transaction{}, Ledger{}, err
@@ -437,6 +440,91 @@ func (r *Repo) Withdraw(requestor string, ctx context.Context, nonce int64, wall
 		return Transaction{}, Ledger{}, err
 	}
 	return transaction, ledger, nil
+}
+
+func (r *Repo) Transfer(requestor string, ctx context.Context, nonce int64, sourceWalletId, destinationWalletId int64, amount decimal.Decimal) (Transaction, []Ledger, error) {
+	if !amount.IsPositive() {
+		return Transaction{}, []Ledger{}, errors.New("amount negative")
+	}
+
+	user, err := r.User(ctx, requestor)
+	if err != nil {
+		return Transaction{}, []Ledger{}, err
+	}
+	transaction, err := r.newTransaction(ctx, nonce, user.Id, "transfer", map[string]any{
+		"amount":                amount.String(),
+		"source_wallet_id":      sourceWalletId,
+		"destination_wallet_id": destinationWalletId,
+	})
+
+	if err != nil {
+		return Transaction{}, []Ledger{}, err
+	}
+	tx, err := r.conn.Begin(ctx)
+	if err != nil {
+		return Transaction{}, []Ledger{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	sourceUserWallet, err := r.userWalletByWalletId(ctx, tx, sourceWalletId)
+	if err != nil {
+		return Transaction{}, []Ledger{}, err
+	}
+	if requestor != sourceUserWallet.User.Username {
+		return Transaction{}, []Ledger{}, errors.New("requestor and wallet owner mismatch")
+	}
+
+	destinationUserWallet, err := r.userWalletByWalletId(ctx, tx, destinationWalletId)
+	if err != nil {
+		return Transaction{}, []Ledger{}, err
+	}
+	if destinationUserWallet.Wallet.Currency != sourceUserWallet.Wallet.Currency {
+		err = errors.New("currency_mismatch")
+		tsErr := r.UpdateTransactionStatus(context.Background(), transaction.Id, fmt.Sprintf("error_%s", err.Error()))
+		if tsErr != nil {
+			return Transaction{}, []Ledger{}, errors.Join(tsErr, err)
+		}
+		return Transaction{}, []Ledger{}, err
+	}
+
+	sourceNewBalance := sourceUserWallet.Wallet.Balance.Sub(amount)
+	err = r.updateBalance(ctx, tx, sourceWalletId, sourceNewBalance)
+	if err != nil {
+		tsErr := r.UpdateTransactionStatus(context.Background(), transaction.Id, fmt.Sprintf("error_%s", err.Error()))
+		if tsErr != nil {
+			return Transaction{}, []Ledger{}, errors.Join(tsErr, err)
+		}
+		return Transaction{}, []Ledger{}, err
+	}
+	withdrawLedger, err := r.appendLedger(ctx, tx, nonce, sourceWalletId, transaction.Id, "debit", amount, sourceNewBalance)
+	if err != nil {
+		return Transaction{}, []Ledger{}, err
+	}
+
+	destinationNewBalance := destinationUserWallet.Wallet.Balance.Add(amount)
+	err = r.updateBalance(ctx, tx, destinationWalletId, destinationNewBalance)
+	if err != nil {
+		tsErr := r.UpdateTransactionStatus(context.Background(), transaction.Id, fmt.Sprintf("error_%s", err.Error()))
+		if tsErr != nil {
+			return Transaction{}, []Ledger{}, errors.Join(tsErr, err)
+		}
+		return Transaction{}, []Ledger{}, err
+	}
+	depositledger, err := r.appendLedger(ctx, tx, nonce, destinationWalletId, transaction.Id, "credit", amount, destinationNewBalance)
+	if err != nil {
+		return Transaction{}, []Ledger{}, err
+	}
+
+	err = r.updateTransactionStatus(ctx, tx, transaction.Id, "success")
+	if err != nil {
+		return Transaction{}, []Ledger{}, err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return Transaction{}, []Ledger{}, err
+	}
+	return transaction, []Ledger{withdrawLedger, depositledger}, nil
 }
 
 type Ledger struct {
