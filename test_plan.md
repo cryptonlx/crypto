@@ -101,7 +101,7 @@ Ensure API test server is [ready](./readme.md#setup-local-environment) and [exec
         - [x] Status: 200
         - [x] Result: Assert `ledgers`= [`withdraw.status=error, metadata.source_wallet_id, metadata.amount`]
 - [x] [T_0007] - New User: Withdraw Wallet Success\
-  User Stories: [US-001],[US-002], [US-005]
+  User Stories: [US-001], [US-002], [US-004], [US-005]
     - [x] [Setup] Do [T_0003]
     - [x] [T_0007_001] Deposit `deposit_amount`=60.2
         - Endpoint: [API-USER-DEP]
@@ -117,31 +117,42 @@ Ensure API test server is [ready](./readme.md#setup-local-environment) and [exec
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
         - [x] Result: Assert in order: `ledgers`= [`withdraw.status=success`, `deposit.status=success`]
-- [ ] [T_0008] - Transfer \
-  User Stories: [US-001],[US-002], [US-005]
+- [ ] [T_0008] - Transfer Fail (Currency Mismatch)\
+  User Stories: [US-001], [US-002], [US-003], [US-004], [US-005]
     - [ ] [Setup]
-        - [ ] get `user1.wallet` <- Do [T_0003]
-        - [ ] get `user2.wallet` <- Do [T_0003]
-
+        - [ ] get `user1.wallet` <- Do [T_0003] curr=SGD
+        - [ ] get `user2.wallet` <- Do [T_0003] curr=USD
     - [ ] [T_0008_001] Deposit to `user1.wallet`. `amount`=60.2
         - Endpoint: [API-USER-DEP]
         - [ ] Status: 200
     - [ ] [T_0008_002] Transfer `amount` to `user2.wallet`
         - Endpoint: [API-USER-TRF]
+        - [ ] Status: 400
+        - [ ] Error Message = `currency_mismatch`
+- [ ] [T_0009] - Transfer Success\
+  User Stories: [US-001], [US-002], [US-003], [US-004], [US-005]
+    - [ ] [Setup]
+        - [ ] get `user1.wallet` <- Do [T_0003]
+        - [ ] get `user2.wallet` <- Do [T_0003]
+    - [ ] [T_0009_001] Deposit to `user1.wallet`. `amount`=60.2
+        - Endpoint: [API-USER-DEP]
         - [ ] Status: 200
-    - [ ] [T_0008_003] Get `user1.wallet` balance
+    - [ ] [T_0009_002] Transfer `amount` to `user2.wallet`
+        - Endpoint: [API-USER-TRF]
+        - [ ] Status: 200
+    - [ ] [T_0009_003] Get `user1.wallet` balance
         - Endpoint: [API-USER-TXH]
         - [ ] Status: 200
         - [ ] Result: `wallet.balance`=0
-    - [ ] [T_0008_004] Get `user2.wallet` balance
+    - [ ] [T_0009_004] Get `user2.wallet` balance
         - Endpoint: [API-USER-TXH]
         - [ ] Status: 200
         - [ ] Result: `wallet.balance`=60.2
-    - [ ] [T_0008_004] Get `user1` history
+    - [ ] [T_0009_004] Get `user1` history
         - Endpoint: [API-USER-TXH]
         - [ ] Status: 200
         - [ ] Result: Assert in order: `ledgers`= [`transfer.status=success`, `deposit.status=success`]
-    - [ ] [T_0008_005] Get `user2` history
+    - [ ] [T_0009_005] Get `user2` history
         - Endpoint: [API-USER-TXH]
         - [ ] Status: 200
         - [ ] Result: Assert in order: `ledgers`= [`transfer.status=success`]
