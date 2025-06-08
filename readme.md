@@ -15,11 +15,18 @@ cd crypto
 
 ### Commands
 
-#### start server `DATABASE_URL=<> go run ./cmd/server`
+#### start server
+`DATABASE_URL=<conn_string> go run ./cmd/server`
 
-#### tests `SERVER_URL=<server_url> go run ./cmd/e2e_tests`
+#### run e2e tests
+`SERVER_URL=<server_url> N=<parallel_runs> go run ./cmd/e2e_tests`
+Execute [test_plan](./test_plan.md).
 
-Spins up a client that executes the [???test_plan](???).
+#### Generate Swagger
+
+Install [swag](https://github.com/swaggo/swag).
+
+`swag init --parseDependency --dir ./src/controller/mux/user[,<directories>]`
 
 # Design/Development Approach
 
@@ -100,12 +107,12 @@ The tests are end-to-end and will require external connections (db etc.).
 
 - Testing
     - Add table-driven unit tests to test in packages in isolation for more confidence.
-  - Scalability
-      - Consider service availability/maintainability for massive operations.
-          - Set rate limiting per endpoint basis to stabilise server. Use Redis to store rate limiter's state a server
-            cluster.
-      - Support for asynchronous services.
-          - For example, notify on operation fail/success, balance change etc.
+- Scalability
+    - Consider service availability/maintainability for massive operations.
+        - Set rate limiting per endpoint basis to stabilise server. Use Redis to store rate limiter's state a server
+          cluster.
+    - Support for asynchronous services.
+        - For example, notify on operation fail/success, balance change etc.
 - List Payload Selection
     - List responses should have pagination and sorting parameters to return subset as result.
 - Greater API Flexibility

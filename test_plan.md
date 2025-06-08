@@ -93,7 +93,7 @@ Ensure API test server is ready.
   User Stories: [US-002], [US-005]
     - [x] [Setup] Do [T_0003]
     - [x] [T_0006_001] Withdraw from new wallet `wdr_amount`
-        - Endpoint: [API-USER-DEP]
+        - Endpoint: [API-USER-WDR]
         - [x] Status: 400
         - [x] Result: Error Message = `insufficient_funds`
     - [x] [T_0006_002] Get History
@@ -107,13 +107,30 @@ Ensure API test server is ready.
         - Endpoint: [API-USER-DEP]
         - [x] Status: 200
     - [x] [T_0007_002] Withdraw `wdr_amount`=50.1
-        - Endpoint: [API-USER-DEP]
+        - Endpoint: [API-USER-WDR]
         - [x] Status: 200
     - [x] [T_0007_003] Get Balance
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
         - [x] Result: `wallet.balance`=10.1
     - [x] [T_0007_004] Get History
+        - Endpoint: [API-USER-TXH]
+        - [x] Status: 200
+        - [x] Result: Assert in order: `ledgers`= [`withdraw.status=success`, `deposit.status=success`]
+- [x] [T_0008] - Transfer \
+  User Stories: [US-001],[US-002], [US-005]
+    - [x] [Setup] Do [T_0003]
+    - [x] [T_0008_001] Deposit `deposit_amount`=60.2
+        - Endpoint: [API-USER-DEP]
+        - [x] Status: 200
+    - [x] [T_0008_002] Withdraw `wdr_amount`=50.1
+        - Endpoint: [API-USER-WDR]
+        - [x] Status: 200
+    - [x] [T_0008_003] Get Balance
+        - Endpoint: [API-USER-TXH]
+        - [x] Status: 200
+        - [x] Result: `wallet.balance`=10.1
+    - [x] [T_0008_004] Get History
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
         - [x] Result: Assert in order: `ledgers`= [`withdraw.status=success`, `deposit.status=success`]
