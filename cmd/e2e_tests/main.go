@@ -59,6 +59,7 @@ func Exec(client *client.Client) {
 	T_0007(client)
 	T_0008(client)
 	T_0009(client)
+	T_0010(client)
 }
 
 func Ping(client *client.Client) {
@@ -145,7 +146,7 @@ func T_0002(client *client.Client) {
 
 	responseBody, responseStatusCode, err = client.Transactions(username)
 	if responseStatusCode != http.StatusOK {
-		log.Fatalf(`[T_0002_003] Transactions() want 200. Got responseStatusCode=%d, err=%#v`, responseStatusCode, err)
+		log.Fatalf(`[T_0002_003] Transactions() want 200. Got responseStatusCode=%d, err=%#v`, responseStatusCode, *responseBody.Error)
 	}
 }
 
@@ -271,26 +272,26 @@ func T_0006(client *client.Client) {
 
 	tRespBody, tStatusCode, err := client.Transactions(username)
 	if tStatusCode != http.StatusOK {
-		log.Fatalf(`[T_0006_003] Transactions want 200. Got responseStatusCode=%d, err=%#v`, tStatusCode, err)
+		log.Fatalf(`[T_0006_002] Transactions want 200. Got responseStatusCode=%d, err=%#v`, tStatusCode, err)
 	}
 	if len(tRespBody.Data.Transactions) == 0 {
-		log.Fatalf(`[T_0006_003] Transactions want transactions.len > 0. got 0`)
+		log.Fatalf(`[T_0006_002] Transactions want transactions.len > 0. got 0`)
 	}
 	transaction0 := tRespBody.Data.Transactions[0]
 	if len(transaction0.Ledgers) != 0 {
-		log.Fatalf(`[T_0006_003] Transactions want transactions[0].ledgers[0].len == 0 (failed transaction should have 0 ledgers). got %d`, len(transaction0.Ledgers))
+		log.Fatalf(`[T_0006_002] Transactions want transactions[0].ledgers[0].len == 0 (failed transaction should have 0 ledgers). got %d`, len(transaction0.Ledgers))
 	}
 	if transaction0.Operation != "withdraw" {
-		log.Fatalf(`[T_0006_003] Transactions want transactions[0].ledgers[0].operation=withdraw. got %s`, transaction0.Operation)
+		log.Fatalf(`[T_0006_002] Transactions want transactions[0].ledgers[0].operation=withdraw. got %s`, transaction0.Operation)
 	}
 	if transaction0.Status != "error_insufficient_funds" {
-		log.Fatalf(`[T_0006_003] Transactions want transactions[0].ledgers[0].status="error_insufficient_funds". got %s`, transaction0.Status)
+		log.Fatalf(`[T_0006_002] Transactions want transactions[0].ledgers[0].status="error_insufficient_funds". got %s`, transaction0.Status)
 	}
 	if transaction0.MetaData.SourceWalletId == nil || *transaction0.MetaData.SourceWalletId != wallet.Id {
-		log.Fatalf(`[T_0006_003] Transactions want transactions[0].metadata.source_wallet_id=%d. got %v`, wallet.Id, transaction0.MetaData.SourceWalletId)
+		log.Fatalf(`[T_0006_002] Transactions want transactions[0].metadata.source_wallet_id=%d. got %v`, wallet.Id, transaction0.MetaData.SourceWalletId)
 	}
 	if transaction0.MetaData.Amount == nil || *transaction0.MetaData.Amount != "50.1" {
-		log.Fatalf(`[T_0006_003] Transactions want transactions[0].metadata.amount=%s. got %s`, "50.1", transaction0.MetaData.Amount)
+		log.Fatalf(`[T_0006_002] Transactions want transactions[0].metadata.amount=%s. got %s`, "50.1", transaction0.MetaData.Amount)
 	}
 }
 
@@ -386,7 +387,7 @@ func T_0008(client *client.Client) {
 		log.Fatalf(`[T_0008_003] Transactions want 200. Got responseStatusCode=%d, err=%#v`, tStatusCode, cErr)
 	}
 	if len(tRespBody.Data.Transactions) != 2 {
-		log.Fatalf(`[T_0008_003] Transactions want transactions.len > 2. got %d`, len(tRespBody.Data.Transactions))
+		log.Fatalf(`[T_0008_003] Transactions want transactions.len = 2. got %d`, len(tRespBody.Data.Transactions))
 	}
 	if tRespBody.Data.Transactions[0].Operation != "transfer" {
 		log.Fatalf(`[T_0008_003] Transactions want transactions[0].operation="transfer". got %s`, tRespBody.Data.Transactions[0].Operation)
@@ -395,7 +396,10 @@ func T_0008(client *client.Client) {
 		log.Fatalf(`[T_0008_003] Transactions want transactions[0].status="error_currency_mismatch". got %s`, tRespBody.Data.Transactions[0].Status)
 	}
 	if tRespBody.Data.Transactions[1].Operation != "deposit" {
-		log.Fatalf(`[T_0008_003] Transactions want transactions[0].operation="deposit". got %s`, tRespBody.Data.Transactions[0].Operation)
+		log.Fatalf(`[T_0008_003] Transactions want transactions[1].operation="deposit". got %s`, tRespBody.Data.Transactions[0].Operation)
+	}
+	if tRespBody.Data.Transactions[1].Status != "success" {
+		log.Fatalf(`[T_0008_003] Transactions want transactions[1].status="success". got %s`, tRespBody.Data.Transactions[0].Status)
 	}
 }
 
@@ -436,7 +440,7 @@ func T_0009(client *client.Client) {
 		log.Fatalf(`[T_0009_003] Transactions want 200. Got responseStatusCode=%d, err=%#v`, tStatusCode, cErr)
 	}
 	if len(tRespBody.Data.Transactions) != 2 {
-		log.Fatalf(`[T_0009_003] Transactions want transactions.len > 2. got %d`, len(tRespBody.Data.Transactions))
+		log.Fatalf(`[T_0009_003] Transactions want transactions.len = 2. got %d`, len(tRespBody.Data.Transactions))
 	}
 	if tRespBody.Data.Transactions[0].Operation != "transfer" {
 		log.Fatalf(`[T_0009_003] Transactions want transactions[0].operation="transfer". got %s`, tRespBody.Data.Transactions[0].Operation)
@@ -445,7 +449,87 @@ func T_0009(client *client.Client) {
 		log.Fatalf(`[T_0009_003] Transactions want transactions[0].status="error_insufficient_funds". got %s`, tRespBody.Data.Transactions[0].Status)
 	}
 	if tRespBody.Data.Transactions[1].Operation != "deposit" {
-		log.Fatalf(`[T_0009_003] Transactions want transactions[0].operation="deposit". got %s`, tRespBody.Data.Transactions[0].Operation)
+		log.Fatalf(`[T_0009_003] Transactions want transactions[1].operation="deposit". got %s`, tRespBody.Data.Transactions[1].Operation)
+	}
+	if tRespBody.Data.Transactions[1].Status != "success" {
+		log.Fatalf(`[T_0009_003] Transactions want transactions[1].status="success". got %s`, tRespBody.Data.Transactions[1].Status)
+	}
+}
+
+func T_0010(client *client.Client) {
+	username0, user0Wallets := SetupUserAndWalletCreation(client, "T_0010", "SGD")
+	username1, user1Wallets := SetupUserAndWalletCreation(client, "T_0010", "SGD")
+
+	user0wallet0 := user0Wallets[0]
+	_, dStatusCode, cErr := client.Deposit(username0, user0wallet0.Id, decimal.NewFromFloat(60.2))
+	if cErr != nil {
+		log.Fatalf(`[T_0010_001] Deposit transaction want nil err, got error %v`, cErr)
+	}
+	if dStatusCode != http.StatusOK {
+		log.Fatalf("[T_0010_001] Deposit want 200. responseStatusCode=%d, err=%v", dStatusCode, cErr)
+	}
+
+	user1wallet0 := user1Wallets[0]
+	wRespBody, wStatusCode, cErr := client.Transfer(username0, user0wallet0.Id, user1wallet0.Id, decimal.NewFromFloat(60.2))
+	if cErr != nil {
+		log.Fatalf(`[T_0010_002] Transfer transaction want nil cErr, got error %v`, cErr)
+	}
+	if wStatusCode != http.StatusOK {
+		log.Fatalf("[T_0010_002] Transfer want 200. responseStatusCode=%d, err=%v", wStatusCode, cErr)
+	}
+
+	if wRespBody.Error != nil {
+		log.Fatalf(`[T_0010_002] Transfer want nil responseBody.Error. got %s`, *wRespBody.Error)
+	}
+
+	tRespBody, tStatusCode, cErr := client.Transactions(username0)
+	if cErr != nil {
+		log.Fatalf("[T_0010_003] Transactions want nil err. responseStatusCode=%d, err=%v", tStatusCode, cErr)
+	}
+	if tStatusCode != http.StatusOK {
+		log.Fatalf(`[T_0010_003] Transactions want 200. Got responseStatusCode=%d, err=%#v`, tStatusCode, cErr)
+	}
+	if len(tRespBody.Data.Transactions) != 2 {
+		log.Fatalf(`[T_0010_003] Transactions want transactions.len = 2 (transfer+deposit). got %d`, len(tRespBody.Data.Transactions))
+	}
+
+	log.Printf("%#v\n", tRespBody.Data.Transactions)
+
+	if tRespBody.Data.Transactions[0].Operation != "transfer" {
+		log.Fatalf(`[T_0010_004] Transactions want transactions[0].operation="transfer". got %s`, tRespBody.Data.Transactions[0].Operation)
+	}
+	if tRespBody.Data.Transactions[0].Status != "success" {
+		log.Fatalf(`[T_0010_004] Transactions want transactions[0].status="success". got %s`, tRespBody.Data.Transactions[0].Status)
+	}
+	if tRespBody.Data.Transactions[1].Operation != "deposit" {
+		log.Fatalf(`[T_0010_004] Transactions want transactions[1].operation="deposit". got %s`, tRespBody.Data.Transactions[1].Operation)
+	}
+	if tRespBody.Data.Transactions[1].Status != "success" {
+		log.Fatalf(`[T_0010_004] Transactions want transactions[1].status="success". got %s`, tRespBody.Data.Transactions[1].Status)
+	}
+
+	wallRespBody, wallStatusCode, cErr := client.Wallets(username0)
+	if cErr != nil {
+		log.Fatalf("[T_0010_005] Wallets want nil err. responseStatusCode=%d, err=%v", wallStatusCode, cErr)
+	}
+	if wallStatusCode != http.StatusOK {
+		log.Fatalf(`[T_0010_005] Wallets want 200. Got responseStatusCode=%d, err=%#v`, wallStatusCode, cErr)
+	}
+	wallet := wallRespBody.Data.Wallets[0]
+	if wallet.Balance != "0" {
+		log.Fatalf("[T_0010_005] Wallets want balance=0. got=%s", wallet.Balance)
+	}
+
+	wallRespBody, wallStatusCode, cErr = client.Wallets(username1)
+	if cErr != nil {
+		log.Fatalf("[T_0010_006] Wallets want nil err. responseStatusCode=%d, err=%v", wallStatusCode, cErr)
+	}
+	if wallStatusCode != http.StatusOK {
+		log.Fatalf(`[T_0010_006] Wallets want 200. Got responseStatusCode=%d, err=%#v`, wallStatusCode, cErr)
+	}
+	wallet = wallRespBody.Data.Wallets[0]
+	if wallet.Balance != "60.2" {
+		log.Fatalf("[T_0010_006] Wallets want balance=0. got=%s", wallet.Balance)
 	}
 }
 
@@ -501,7 +585,6 @@ func SetupUserAndWalletCreation(client *client.Client, logPrefix string, currenc
 	if len(responseBody.Data.Wallets) == 0 {
 		log.Fatalf(`[%s_004] SETUP Wallets want some wallets. Got len=%d, err=%#v`, logPrefix, len(responseBody.Data.Wallets), err)
 	}
-
 	if responseBody.Data.Wallets[0].Currency != currency {
 		log.Fatalf(`[%s_004] SETUP Wallets want currency=%s. Got currency=%s, err=%#v`, logPrefix, currency, responseBody.Data.Wallets[0].Currency, err)
 	}

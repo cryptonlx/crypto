@@ -159,18 +159,21 @@ type TransactionLedgers struct {
 	Ledgers []Ledger
 }
 
-func (r *Repo) getTransactionsByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]TransactionLedgers, error) {
+// getTransactionLedgersByUserId
+// Get transactions requested by user. Ledgers of other user's wallet will be omitted.
+// Includes ledgers of user's wallet not recorded from a transaction requested by the user.
+func (r *Repo) getTransactionLedgersByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]TransactionLedgers, error) {
 	if tx == nil {
 		return []TransactionLedgers{}, utils.NilTxError
 	}
 
-	rows, err := tx.Query(ctx, `select t.id,t.requestor_id, t.nonce, t.status, t.operation,t.created_at, t.metadata, COALESCE(json_agg(json_build_object('id',l.wallet_id,'transaction_id',l.transaction_id,'entry_type', l.entry_type,'amount', l.amount,'created_at', l.created_at,'balance', l.balance)) filter (where l.id is not null), '[]'::json)
-										from transactions t
-												 left join user_accounts ua on ua.id = t.requestor_id
-												 left join ledgers l on t.id = l.transaction_id
-											where t.requestor_id = $1
-										group by t.id order by t.created_at desc
-`, userId)
+	rows, err := tx.Query(ctx, `with l as (select l.id, l.wallet_id,l.transaction_id,l.entry_type,l.amount,l.created_at,l.balance, ua.id uaid from ledgers l left join wallets w on w.id = l.wallet_id
+    left join user_accounts ua on ua.id = w.user_account_id where ua.id = $1)
+select t.id,t.requestor_id, t.nonce, t.status, t.operation,t.created_at, t.metadata, COALESCE(json_agg(json_build_object('id',l.wallet_id,'transaction_id',l.transaction_id,'entry_type', l.entry_type,'amount', l.amount,'created_at', l.created_at,'balance', l.balance)) filter (where l.id is not null), '[]'::json)
+from transactions t full join l on l.transaction_id = t.id
+where t.requestor_id = $2 or l.uaid = $3
+group by t.id order by t.created_at desc
+`, userId, userId, userId)
 	if err != nil {
 		return []TransactionLedgers{}, err
 	}
@@ -276,7 +279,7 @@ func (r *Repo) Transactions(ctx context.Context, username string) ([]Transaction
 		return []TransactionLedgers{}, err
 	}
 
-	transactions, err := r.getTransactionsByUserId(ctx, tx, user.Id)
+	transactions, err := r.getTransactionLedgersByUserId(ctx, tx, user.Id)
 	if err != nil {
 		return []TransactionLedgers{}, err
 	}
@@ -368,7 +371,7 @@ func (r *Repo) Deposit(requestor string, ctx context.Context, nonce int64, walle
 		return Transaction{}, Ledger{}, err
 	}
 
-	ledger, err := r.appendLedger(ctx, tx, nonce, walletId, transaction.Id, "credit", amount, newBalance)
+	ledger, err := r.appendLedger(ctx, tx, walletId, transaction.Id, "credit", amount, newBalance)
 	if err != nil {
 		return Transaction{}, Ledger{}, err
 	}
@@ -425,7 +428,7 @@ func (r *Repo) Withdraw(requestor string, ctx context.Context, nonce int64, wall
 		return Transaction{}, Ledger{}, err
 	}
 
-	ledger, err := r.appendLedger(ctx, tx, nonce, walletId, transaction.Id, "debit", amount, newBalance)
+	ledger, err := r.appendLedger(ctx, tx, walletId, transaction.Id, "debit", amount, newBalance)
 	if err != nil {
 		return Transaction{}, Ledger{}, err
 	}
@@ -496,7 +499,7 @@ func (r *Repo) Transfer(requestor string, ctx context.Context, nonce int64, sour
 		}
 		return Transaction{}, []Ledger{}, err
 	}
-	withdrawLedger, err := r.appendLedger(ctx, tx, nonce, sourceWalletId, transaction.Id, "debit", amount, sourceNewBalance)
+	withdrawLedger, err := r.appendLedger(ctx, tx, sourceWalletId, transaction.Id, "debit", amount, sourceNewBalance)
 	if err != nil {
 		return Transaction{}, []Ledger{}, err
 	}
@@ -510,7 +513,7 @@ func (r *Repo) Transfer(requestor string, ctx context.Context, nonce int64, sour
 		}
 		return Transaction{}, []Ledger{}, err
 	}
-	depositledger, err := r.appendLedger(ctx, tx, nonce, destinationWalletId, transaction.Id, "credit", amount, destinationNewBalance)
+	depositledger, err := r.appendLedger(ctx, tx, destinationWalletId, transaction.Id, "credit", amount, destinationNewBalance)
 	if err != nil {
 		return Transaction{}, []Ledger{}, err
 	}
@@ -537,7 +540,7 @@ type Ledger struct {
 	TransactionId int64           `json:"transaction_id"`
 }
 
-func (r *Repo) appendLedger(ctx context.Context, tx pgx.Tx, nonce int64, walletId int64, transactionId int64, entryType string, amount, balance decimal.Decimal) (Ledger, error) {
+func (r *Repo) appendLedger(ctx context.Context, tx pgx.Tx, walletId int64, transactionId int64, entryType string, amount, balance decimal.Decimal) (Ledger, error) {
 	if tx == nil {
 		return Ledger{}, utils.NilTxError
 	}
