@@ -349,17 +349,17 @@ func T_0007(client *client.Client) {
 }
 
 func T_0008(client *client.Client) {
-	_, _ = SetupUserAndWalletCreation(client, "T_0007", "SGD")
+	username1, user0Wallets := SetupUserAndWalletCreation(client, "T_0007", "SGD")
 	_, _ = SetupUserAndWalletCreation(client, "T_0007", "USD")
 
-	//wallet := wallets[0]
-	//_, dStatusCode, cErr := client.Deposit(username, wallet.Id, decimal.NewFromFloat(60.2))
-	//if cErr != nil {
-	//	log.Fatalf(`[T_0008_001] Deposit transaction want nil err, got error %v`, cErr)
-	//}
-	//if dStatusCode != http.StatusOK {
-	//	log.Fatalf("[T_0008_001] Deposit want 200. responseStatusCode=%d, err=%v", dStatusCode, cErr)
-	//}
+	wallet := user0Wallets[0]
+	_, dStatusCode, cErr := client.Deposit(username1, wallet.Id, decimal.NewFromFloat(60.2))
+	if cErr != nil {
+		log.Fatalf(`[T_0008_001] Deposit transaction want nil err, got error %v`, cErr)
+	}
+	if dStatusCode != http.StatusOK {
+		log.Fatalf("[T_0008_001] Deposit want 200. responseStatusCode=%d, err=%v", dStatusCode, cErr)
+	}
 	//
 	//wRespBody, wStatusCode, cErr := client.Withdraw(username, wallet.Id, decimal.NewFromFloat(50.1))
 	//if cErr != nil {
