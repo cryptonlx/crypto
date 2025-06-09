@@ -7,12 +7,15 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-var NilTxError = errors.New("nil transaction")
-var UniqueViolationError = errors.New("unique_violation")
+var (
+	NilTxError           = errors.New("nil transaction")
+	UniqueViolationError = errors.New("unique_violation")
+)
 
 func NotFoundErrorF(resourceName string) error {
 	return fmt.Errorf("resource: %s not found", resourceName)
 }
+
 func ConstraintViolationErrorF(constraintName string) error {
 	if constraintName == "wallets_balance_check" {
 		return fmt.Errorf("insufficient_funds")

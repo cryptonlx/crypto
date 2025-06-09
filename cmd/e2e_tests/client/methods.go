@@ -38,14 +38,14 @@ func httpPost[T ResponseBody[V], V any](httpClient *http.Client, baseUrl string,
 	}
 	defer resp.Body.Close()
 
-	//log.Printf("resp.StatusCode: %v\n", resp.StatusCode)
+	// log.Printf("resp.StatusCode: %v\n", resp.StatusCode)
 
 	body, clientError := io.ReadAll(resp.Body)
 	if clientError != nil {
 		return t, 0, clientError
 	}
 
-	//log.Printf("Body: %s\n", string(body))
+	// log.Printf("Body: %s\n", string(body))
 
 	clientError = json.Unmarshal(body, &t)
 	if clientError != nil {
@@ -74,14 +74,14 @@ func httpGet[T ResponseBody[V], V any](httpClient *http.Client, fullURL string, 
 	}
 	defer resp.Body.Close()
 
-	//log.Printf("resp.StatusCode: %v\n", resp.StatusCode)
+	// log.Printf("resp.StatusCode: %v\n", resp.StatusCode)
 
 	body, clientError := io.ReadAll(resp.Body)
 	if clientError != nil {
 		return t, 0, clientError
 	}
 
-	//log.Printf("Body: %s\n", string(body))
+	// log.Printf("Body: %s\n", string(body))
 
 	clientError = json.Unmarshal(body, &t)
 	if clientError != nil {

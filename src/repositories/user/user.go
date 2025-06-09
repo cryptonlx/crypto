@@ -20,8 +20,10 @@ import (
 // Subset of ISO4217
 type CurrencyType string
 
-const CurrencyTypeUSD CurrencyType = "USD"
-const CurrencyTypeSGD CurrencyType = "SGD"
+const (
+	CurrencyTypeUSD CurrencyType = "USD"
+	CurrencyTypeSGD CurrencyType = "SGD"
+)
 
 type User struct {
 	Id       int64
@@ -71,7 +73,7 @@ type Ledger struct {
 
 type TransactionLedgers struct {
 	Transaction Transaction
-	//Ledgers     []Ledger
+	// Ledgers     []Ledger
 	Ledgers []Ledger
 }
 
@@ -189,6 +191,7 @@ func (r *Repo) CreateWallet(ctx context.Context, username string, currency Curre
 	}
 	return wallet, nil
 }
+
 func (r *Repo) createUser(ctx context.Context, tx pgx.Tx, username string) (User, error) {
 	if tx == nil {
 		return User{}, utils.NilTxError
@@ -197,7 +200,6 @@ func (r *Repo) createUser(ctx context.Context, tx pgx.Tx, username string) (User
 
 	var user User
 	err := row.Scan(&user.Id, &user.Username)
-
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
@@ -480,7 +482,6 @@ func (r *Repo) Transfer(requestor string, ctx context.Context, nonce int64, sour
 		"source_wallet_id":      sourceWalletId,
 		"destination_wallet_id": destinationWalletId,
 	})
-
 	if err != nil {
 		return Transaction{}, []Ledger{}, err
 	}

@@ -4,10 +4,12 @@ import (
 	"net/http"
 )
 
-type Middleware = func(handler http.Handler) http.Handler
-type MiddewareStack struct {
-	h []Middleware
-}
+type (
+	Middleware     = func(handler http.Handler) http.Handler
+	MiddewareStack struct {
+		h []Middleware
+	}
+)
 
 func (ms MiddewareStack) Wrap(next func(handler http.Handler) http.Handler) MiddewareStack {
 	ms.h = append(ms.h, next)
