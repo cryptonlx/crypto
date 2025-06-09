@@ -9,22 +9,34 @@
 ``` /bin/sh
 git clone https://github.com/cryptonlx/crypto.git
 cd crypto
+# set hook
 cp ./pre-commit.sample .git/hooks/pre-commit
+# copy env
+cp .env .env.sample
 ```
 #### PostgreSQL Instance
 
-Execute DDL on a new database (schema=`public`):\
-`./schemas/schema_001_up_init.sql`
+Execute DDL on a new database `cryptocom`:\
+```
+# Tear down
+psql -d cryptocom < ./schemas/schema_001_down_init.sql
+# Set up
+psql -d cryptocom < ./schemas/schema_001_up_init.sql
+```
 
-### Commands
+1. #### Start Server
+Start HTTP server:
+```
+go run ./cmd/server
+```
 
-#### Start Server
-Start HTTP server:\
-`DATABASE_URL=<conn_string> go run ./cmd/server`
+2. #### Run e2e Tests
+Execute [test_plan](./test_plan.md):
+```
+SERVER_URL=<server_url> N=<parallel_runs> go test -v ./...
 
-#### Run e2e Tests
-Execute [test_plan](./test_plan.md):\
-`SERVER_URL=<server_url> N=<parallel_runs> go run ./cmd/e2e_tests`
+# Example: SERVER_URL=http://localhost:8080 N=120 go test -v ./...
+```
 
 #### Generate API Docs
 
@@ -125,6 +137,7 @@ Folder: [./schemas](./schemas)
 
 - Testing
     - Add table-driven unit tests to test in packages to test in isolation for more confidence.
+    - Improve test coverage.
 - Scalability
     - Consider service availability/maintainability for massive operations.
         - Set rate limiting per endpoint basis to stabilise server. Use Redis to store rate limiter's state a server
