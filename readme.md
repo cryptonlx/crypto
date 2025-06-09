@@ -190,7 +190,7 @@ Folder: [./schemas](./schemas)
 - Testing
     - Add table-driven unit tests to test in packages to test in isolation for more confidence.
     - Improve test coverage and quality by testing edge cases.
-    - Benchmark for response time. Some indexes are added based on current use cases, but yet to verify if performant under load.
+    - Benchmark for response time. Some db indexes are added based on current use cases, but yet to verify if performant under load.
 - Delivery
     - Containerize application for portability.
 - Scalability
