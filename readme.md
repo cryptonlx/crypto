@@ -8,7 +8,7 @@ Table of Contents
         * [PostgreSQL Instance](#postgresql-instance)
         * [Start HTTP Server](#start-http-server)
         * [Run e2e Tests](#run-e2e-tests)
-* [Design/Development Approach](#designdevelopment-approach)
+* [Design](#designdevelopment-approach)
     * [Glossary](#glossary)
     * [Functional Requirements](#functional-requirements)
         * [Wallet Transaction Security](#wallet-transaction-security)
@@ -18,8 +18,8 @@ Table of Contents
     * [API Endpoints](#api-endpoints)
         * [API Docs Generation](#api-docs-generation)
         * [Endpoints](#endpoints)
-        * [Database Design](#database-design)
-            * [Relationships](#relationships)
+    * [Database Design](#database-design)
+        * [Relationships](#relationships)
 * [Areas to Improve On and Features to Add](#areas-to-improve-on-and-features-to-add)
 
 
@@ -124,7 +124,7 @@ The username must match:
 - Idempotency for deposit/withdraw/transfer requests:
     - Include a 13-digit unix timestamp as nonce field for request identification.
     - Subsequent requests from same user with same `nonce` will be treated as duplicitous.
-    - Each request can succeed at most once. Retries are allowed.
+    - Each request can succeed at most once. Retries are not allowed.
 
 #### Atomicity
 
@@ -173,7 +173,7 @@ Install [swag](https://github.com/swaggo/swag) and generate docs:
 
    `/POST /wallet`
 
-#### Database Design
+### Database Design
 
 Folder: [./schemas](./schemas)
 
