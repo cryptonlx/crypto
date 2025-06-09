@@ -176,3 +176,7 @@ Ensure API test server is [ready](./readme.md#setup-local-environment) and [exec
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
         - [x] Result: `wallet.balance`=60.2
+- [x] [T_0011] - Create Multiple Wallets\
+  User Stories: [US-004]
+    - [x] [Setup]
+        - [x] get `user1.wallet` <- Do [T_0003] curr=[SGD,USD,MYD]

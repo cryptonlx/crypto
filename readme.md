@@ -43,7 +43,7 @@ cp .env .env.sample
 
 #### PostgreSQL Instance
 
-Execute DDL on a new database `cryptocom`:\
+Execute DDL on a new database `cryptocom`:
 
 ```
 # Tear down
@@ -54,11 +54,11 @@ psql -d cryptocom < ./schemas/schema_001_up_init.sql
 
 1. #### Start HTTP Server
 
-[API Docs](#api-endpoints) @ http://localhost:8080/swagger/index.html
 
 ```
 go run ./cmd/server
 ```
+[API Docs](#api-endpoints) @ http://localhost:8080/swagger/index.html
 
 2. #### Run e2e Tests
 

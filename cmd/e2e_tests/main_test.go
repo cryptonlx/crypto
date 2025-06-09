@@ -4,13 +4,14 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
 	"sync"
 	"syscall"
 	"testing"
 	"time"
 
-	"github.com/cryptonlx/crypto/cmd/e2e_tests/client"
+	testclient "github.com/cryptonlx/crypto/cmd/e2e_tests/client"
 
 	"github.com/shopspring/decimal"
 )
@@ -34,7 +35,7 @@ func TestE2E(t *testing.T) {
 	wg.Add(n)
 	for range n {
 		go func() {
-			client, err := client.NewClient(serverUrl)
+			client, err := testclient.NewClient(serverUrl)
 			if err != nil {
 				panic(err)
 			}
@@ -45,7 +46,7 @@ func TestE2E(t *testing.T) {
 	wg.Wait()
 }
 
-func Exec(t *testing.T, client *client.Client) {
+func Exec(t *testing.T, client *testclient.Client) {
 	Ping(t, client)
 	T_0001(t, client)
 	T_0002(t, client)
@@ -57,16 +58,17 @@ func Exec(t *testing.T, client *client.Client) {
 	T_0008(t, client)
 	T_0009(t, client)
 	T_0010(t, client)
+	T_0011(t, client)
 }
 
-func Ping(t *testing.T, client *client.Client) {
+func Ping(t *testing.T, client *testclient.Client) {
 	_, _, err := client.Wallets("")
 	if errors.Is(err, syscall.ECONNREFUSED) {
 		t.Fatalf("Server not started...")
 	}
 }
 
-func T_0001(t *testing.T, client *client.Client) {
+func T_0001(t *testing.T, client *testclient.Client) {
 	futureUserName := NewRandomUserName("t00001", 12, 2*24*time.Hour)
 	responseBody, responseStatusCode, err := client.Wallets(futureUserName)
 	if responseStatusCode != http.StatusBadRequest {
@@ -111,7 +113,7 @@ func T_0001(t *testing.T, client *client.Client) {
 	}
 }
 
-func T_0002(t *testing.T, client *client.Client) {
+func T_0002(t *testing.T, client *testclient.Client) {
 	futureUserName := NewRandomUserName("t00002", 12, 2*24*time.Hour)
 	responseBody, responseStatusCode, err := client.Transactions(futureUserName)
 	if responseStatusCode != http.StatusBadRequest {
@@ -147,12 +149,12 @@ func T_0002(t *testing.T, client *client.Client) {
 	}
 }
 
-func T_0003(t *testing.T, client *client.Client) {
-	SetupUserAndWalletCreation(t, client, "T_0003", "SGD")
+func T_0003(t *testing.T, client *testclient.Client) {
+	SetupUserAndWalletCreation(t, client, "T_0003", []string{"SGD"})
 }
 
-func T_0004(t *testing.T, client *client.Client) {
-	username, wallets := SetupUserAndWalletCreation(t, client, "T_0004", "SGD")
+func T_0004(t *testing.T, client *testclient.Client) {
+	username, wallets := SetupUserAndWalletCreation(t, client, "T_0004", []string{"SGD"})
 
 	wallet := wallets[0]
 	balanceBefore := wallet.Balance
@@ -180,8 +182,8 @@ func T_0004(t *testing.T, client *client.Client) {
 	}
 }
 
-func T_0005(t *testing.T, client *client.Client) {
-	username, wallets := SetupUserAndWalletCreation(t, client, "T_0005", "SGD")
+func T_0005(t *testing.T, client *testclient.Client) {
+	username, wallets := SetupUserAndWalletCreation(t, client, "T_0005", []string{"SGD"})
 
 	wallet := wallets[0]
 
@@ -245,8 +247,8 @@ func T_0005(t *testing.T, client *client.Client) {
 	}
 }
 
-func T_0006(t *testing.T, client *client.Client) {
-	username, wallets := SetupUserAndWalletCreation(t, client, "T_0006", "SGD")
+func T_0006(t *testing.T, client *testclient.Client) {
+	username, wallets := SetupUserAndWalletCreation(t, client, "T_0006", []string{"SGD"})
 
 	wallet := wallets[0]
 	dRespBody, dStatusCode, cErr := client.Withdraw(username, wallet.Id, decimal.NewFromFloat(50.1))
@@ -292,8 +294,8 @@ func T_0006(t *testing.T, client *client.Client) {
 	}
 }
 
-func T_0007(t *testing.T, client *client.Client) {
-	username, wallets := SetupUserAndWalletCreation(t, client, "T_0007", "SGD")
+func T_0007(t *testing.T, client *testclient.Client) {
+	username, wallets := SetupUserAndWalletCreation(t, client, "T_0007", []string{"SGD"})
 
 	wallet := wallets[0]
 
@@ -347,9 +349,9 @@ func T_0007(t *testing.T, client *client.Client) {
 	}
 }
 
-func T_0008(t *testing.T, client *client.Client) {
-	username0, user0Wallets := SetupUserAndWalletCreation(t, client, "T_0008", "SGD")
-	_, user1Wallets := SetupUserAndWalletCreation(t, client, "T_0008", "USD")
+func T_0008(t *testing.T, client *testclient.Client) {
+	username0, user0Wallets := SetupUserAndWalletCreation(t, client, "T_0008", []string{"SGD"})
+	_, user1Wallets := SetupUserAndWalletCreation(t, client, "T_0008", []string{"USD"})
 
 	user0wallet0 := user0Wallets[0]
 	_, dStatusCode, cErr := client.Deposit(username0, user0wallet0.Id, decimal.NewFromFloat(60.2))
@@ -400,9 +402,9 @@ func T_0008(t *testing.T, client *client.Client) {
 	}
 }
 
-func T_0009(t *testing.T, client *client.Client) {
-	username0, user0Wallets := SetupUserAndWalletCreation(t, client, "T_0009", "SGD")
-	_, user1Wallets := SetupUserAndWalletCreation(t, client, "T_0009", "SGD")
+func T_0009(t *testing.T, client *testclient.Client) {
+	username0, user0Wallets := SetupUserAndWalletCreation(t, client, "T_0009", []string{"SGD"})
+	_, user1Wallets := SetupUserAndWalletCreation(t, client, "T_0009", []string{"SGD"})
 
 	user0wallet0 := user0Wallets[0]
 	_, dStatusCode, cErr := client.Deposit(username0, user0wallet0.Id, decimal.NewFromFloat(60.2))
@@ -453,9 +455,9 @@ func T_0009(t *testing.T, client *client.Client) {
 	}
 }
 
-func T_0010(t *testing.T, client *client.Client) {
-	username0, user0Wallets := SetupUserAndWalletCreation(t, client, "T_0010", "SGD")
-	username1, user1Wallets := SetupUserAndWalletCreation(t, client, "T_0010", "SGD")
+func T_0010(t *testing.T, client *testclient.Client) {
+	username0, user0Wallets := SetupUserAndWalletCreation(t, client, "T_0010", []string{"SGD"})
+	username1, user1Wallets := SetupUserAndWalletCreation(t, client, "T_0010", []string{"SGD"})
 
 	user0wallet0 := user0Wallets[0]
 	_, dStatusCode, cErr := client.Deposit(username0, user0wallet0.Id, decimal.NewFromFloat(60.2))
@@ -554,7 +556,11 @@ func T_0010(t *testing.T, client *client.Client) {
 	}
 }
 
-func SetupUserAndWalletCreation(t *testing.T, client *client.Client, logPrefix string, currency string) (username string, wallets []client.Wallet) {
+func T_0011(t *testing.T, client *testclient.Client) {
+	SetupUserAndWalletCreation(t, client, "T_0011", []string{"SGD", "USD", "MYD"})
+}
+
+func SetupUserAndWalletCreation(t *testing.T, client *testclient.Client, logPrefix string, currencies []string) (username string, wallets []testclient.Wallet) {
 	username = NewRandomUserName(logPrefix, 12, 0)
 	createUserResponseData, responseStatusCode, err := client.CreateUser(username)
 	if responseStatusCode != http.StatusOK {
@@ -584,16 +590,18 @@ func SetupUserAndWalletCreation(t *testing.T, client *client.Client, logPrefix s
 		t.Fatalf(`[%s_002] SETUP Wallets want no wallets. Got len=%d, err=%#v`, logPrefix, len(responseBody.Data.Wallets), err)
 	}
 
-	createWalletResponseBody, createWalletResponseStatusCode, err := client.CreateWallet(username, currency)
-	if createWalletResponseStatusCode != http.StatusOK {
-		t.Fatalf(`[%s_003] SETUP CreateWallet want 200. Got body.Err=%s, statusCode=%d, err=%#v`, logPrefix, *createWalletResponseBody.Error, createWalletResponseStatusCode, err)
-	}
-	if createWalletResponseBody.Error != nil {
-		t.Fatalf(`[%s_003] SETUP CreateWallet want 200. Got createWalletResponseBody.Error=%s, err=%#v`, logPrefix, *createWalletResponseBody.Error, err)
-	}
-	wallet := createWalletResponseBody.Data.Wallet
-	if wallet.Id == 0 {
-		t.Fatalf(`[%s_003] SETUP CreateWallet should succeed. Got id=%v, err=%#v`, logPrefix, createWalletResponseBody.Data.Wallet, err)
+	for _, currency := range currencies {
+		createWalletResponseBody, createWalletResponseStatusCode, err := client.CreateWallet(username, currency)
+		if createWalletResponseStatusCode != http.StatusOK {
+			t.Fatalf(`[%s_003] SETUP CreateWallet want 200. Got body.Err=%s, statusCode=%d, err=%#v`, logPrefix, *createWalletResponseBody.Error, createWalletResponseStatusCode, err)
+		}
+		if createWalletResponseBody.Error != nil {
+			t.Fatalf(`[%s_003] SETUP CreateWallet want 200. Got createWalletResponseBody.Error=%s, err=%#v`, logPrefix, *createWalletResponseBody.Error, err)
+		}
+		wallet := createWalletResponseBody.Data.Wallet
+		if wallet.Id == 0 {
+			t.Fatalf(`[%s_003] SETUP CreateWallet should succeed. Got id=%v, err=%#v`, logPrefix, createWalletResponseBody.Data.Wallet, err)
+		}
 	}
 
 	responseBody, responseStatusCode, err = client.Wallets(username)
@@ -603,12 +611,27 @@ func SetupUserAndWalletCreation(t *testing.T, client *client.Client, logPrefix s
 	if responseBody.Error != nil {
 		t.Fatalf(`[%s_004] SETUP Wallets want 200. Got responseBody.Error=%s, err=%#v`, logPrefix, *responseBody.Error, err)
 	}
-	if len(responseBody.Data.Wallets) == 0 {
+	if len(responseBody.Data.Wallets) != len(currencies) {
 		t.Fatalf(`[%s_004] SETUP Wallets want some wallets. Got len=%d, err=%#v`, logPrefix, len(responseBody.Data.Wallets), err)
 	}
-	if responseBody.Data.Wallets[0].Currency != currency {
-		t.Fatalf(`[%s_004] SETUP Wallets want currency=%s. Got currency=%s, err=%#v`, logPrefix, currency, responseBody.Data.Wallets[0].Currency, err)
-	}
 
+	gotWallets := responseBody.Data.Wallets
+
+	slices.Sort(currencies)
+	slices.SortFunc(gotWallets, func(a, b testclient.Wallet) int {
+		if a.Currency < b.Currency {
+			return -1
+		}
+		if a.Currency > b.Currency {
+			return 1
+		}
+		return 0
+	})
+
+	for i, _ := range gotWallets {
+		if gotWallets[i].Currency != currencies[i] {
+			t.Fatalf(`[%s_004] SETUP Wallets want currency=%s. Got currency=%s, err=%#v`, logPrefix, currencies, responseBody.Data.Wallets[0].Currency, i)
+		}
+	}
 	return username, responseBody.Data.Wallets
 }
