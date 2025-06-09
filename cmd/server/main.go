@@ -15,7 +15,7 @@ import (
 
 	usermux "github.com/cryptonlx/crypto/src/controllers/mux/user"
 	userrepo "github.com/cryptonlx/crypto/src/repositories/user"
-	userservice "github.com/cryptonlx/crypto/src/service/user"
+	userservice "github.com/cryptonlx/crypto/src/services/user"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/time/rate"

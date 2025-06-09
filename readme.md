@@ -4,17 +4,17 @@
 
 ### Requirements
 
-1. Fetch Repository
+#### Fetch Repository
 
 ``` /bin/sh
 git clone https://github.com/cryptonlx/crypto.git
 cd crypto
 cp ./pre-commit.sample .git/hooks/pre-commit
 ```
+#### PostgreSQL Instance
 
-2. PostgreSQL instance
-
-- execute DDL on a new database: `./schemas/schema_001_init.sql`
+Execute DDL on a new database (schema=`public`):\
+`./schemas/schema_001_up_init.sql`
 
 ### Commands
 
@@ -32,18 +32,54 @@ Install [swag](https://github.com/swaggo/swag) and run:
 
 `swag init --parseDependency --dir ./src/controller/mux/user`
 
-# Design/Development Approach
+## Design/Development Approach
 
-The HTTP APIs will be drafted and tests will be written accordingly to verify the behavior via the API contract.
+The HTTP [API Endpoints](#api-endpoints) are drafted and tests will be written accordingly to verify the behavior via the API contract.
 The tests are end-to-end and will require external connections (db etc.).
 
 - Understand requirements.
 - Create [Test Plan](./test_plan.md).
 - Write failing test cases iteratively @ [e2etests](./cmd/e2e_tests)
-    - Implement controller, application logic and database layer.
+    - Implement
+      - http handlers (pkg: [controllers/mux](./src/controllers/mux))
+      - application logic (pkg: [services](./src/services))
+      - database layer (pkg: [repositories](./src/repositories))
     - Verify, refine and update API contract.
 
-# API Endpoints
+### Glossary
+
+  | **Term**        | Description                                                                                       |
+  |-----------------| ------------------------------------------------------------------------------------------------- |
+  | **User**        | An account that can own one or more wallets.                                                      |
+  | **Wallet**      | A value store for a specific currency, owned by a User.                                           |
+  | **Transaction** | A wallet operation (deposit, withdrawal, or transfer) requested by a User.                        |
+  | **Ledger**      | An authoritative record of change in wallet value. A transaction can consist of multiple ledgers. |
+
+
+### Functional Requirements
+
+- Create new user.
+- Each user can have multiple wallets.
+- Supports deposit and withdrawal.
+- Supports transfer from/to wallets.
+- Viewing of wallet balance.
+- Viewing of transaction history.
+
+
+### Non-functional Requirements
+
+#### Wallet Idempotency
+
+- Idempotency for deposit/withdraw/transfer requests:
+    - Include a 13-digit unix timestamp as nonce field for request identification.
+    - Subsequent requests from same user with same `nonce` will be treated as duplicitous.
+    - Each request can succeed at most once. Retries are allowed.
+
+#### Atomicity
+
+- Each request should be processed atomically across affected databsae tables to ensure data integrity.
+
+### API Endpoints
 
 1. **[API-WALL-DEP]** Deposit to user's wallet.
 
@@ -78,39 +114,17 @@ The tests are end-to-end and will require external connections (db etc.).
 
    `/POST /wallet`
 
-### Glossary
+#### Database Design
 
-- User: an account that can own wallets.
-- Wallet: Value store of a currency owned by a User.
-- Transaction: An operation (withdraw/deposit/transfer) requested by a user.
-- Ledger: An authoritative record for change in wallet value. A transaction can consist of multiple ledgers.
+Folder: [./schemas](./schemas)
 
-### Functional Requirements
-
-- Create new user.
-- Each user can have multiple wallets.
-- Supports deposit and withdrawal.
-- Supports transfer from/to wallets.
-- Viewing of wallet balance.
-- Viewing of transaction history.
-
-### Non-functional Requirements
-
-#### Wallet Idempotency
-
-- Idempotency for deposit/withdraw/transfer requests:
-    - Include a 13-digit unix timestamp as nonce field for request identification.
-    - Subsequent requests from same user with same `nonce` will be treated as duplicitous.
-    - Each request can succeed at most once. Retries are allowed.
-
-#### Atomicity
-
-- Each request should be processed atomically and serialized across affected tables to ensure data integrity.
+##### Relationships
+![](./schemas/schema_001_init_relationship_model.png)
 
 ### Areas to Improve on
 
 - Testing
-    - Add table-driven unit tests to test in packages in isolation for more confidence.
+    - Add table-driven unit tests to test in packages to test in isolation for more confidence.
 - Scalability
     - Consider service availability/maintainability for massive operations.
         - Set rate limiting per endpoint basis to stabilise server. Use Redis to store rate limiter's state a server
@@ -123,12 +137,13 @@ The tests are end-to-end and will require external connections (db etc.).
     - Currency Value and Unit Type
         - Support for cross-currency transfer.
         - Decide on better value type assignment in PostgreSQL for accuracy. There are a few options to choose from:
+            - Currently stored as `numeric(20,6)`.
             - Multiply value by 1000x and store as `bigint`.
             - Store as floating point.
             - Store as `money`.
     - Conversion and Broker Fees Calculation for Effective Transaction Value)
 - Security
-    - Principal authorization for wallet actions via token issuance or session.
+    - Principal authorization for wallet transactions via token issuance or session.
     - Ensure request integrity via payload signing.
 - Observability
     - Record failed transactions for auditing.

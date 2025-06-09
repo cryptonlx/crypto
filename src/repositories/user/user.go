@@ -317,7 +317,7 @@ func (r *Repo) transactionLedgersByUserId(ctx context.Context, tx pgx.Tx, userId
 	rows, err := tx.Query(ctx, `with l as (select l.id, l.wallet_id,l.transaction_id,l.entry_type,l.amount,l.created_at,l.balance, ua.id uaid from ledgers l left join wallets w on w.id = l.wallet_id
     left join user_accounts ua on ua.id = w.user_account_id where ua.id = $1)
 select t.id,t.requestor_id, t.nonce, t.status, t.operation,t.created_at, t.metadata, COALESCE(json_agg(json_build_object('id',l.wallet_id,'transaction_id',l.transaction_id,'entry_type', l.entry_type,'amount', l.amount,'created_at', l.created_at,'balance', l.balance)) filter (where l.id is not null), '[]'::json)
-from transactions t full join l on l.transaction_id = t.id
+from transactions t left join l on l.transaction_id = t.id
 where t.requestor_id = $2 or l.uaid = $3
 group by t.id order by t.created_at desc
 `, userId, userId, userId)

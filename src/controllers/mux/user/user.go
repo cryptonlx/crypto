@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/cryptonlx/crypto/src/controllers/response_types"
-	userservice "github.com/cryptonlx/crypto/src/service/user"
+	userservice "github.com/cryptonlx/crypto/src/services/user"
 
 	"github.com/shopspring/decimal"
 )
