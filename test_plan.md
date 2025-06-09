@@ -149,7 +149,7 @@ Ensure API test server is [ready](./readme.md#setup-local-environment) and [exec
         - Endpoint: [API-USER-TXH]
         - [x] Status: 200
         - [x] `ledgers` = [`transfer.status=error_currency_mismatch`, `deposit.status=success`]
-- [x] [T_0010] - Transfer Success\
+- [x] [T_0010] - Cross-User Wallet Transfer Success\
   User Stories: [US-001], [US-002], [US-003], [US-004], [US-005]
     - [x] [Setup]
         - [x] get `user1.wallet` <- Do [T_0003] curr=SGD

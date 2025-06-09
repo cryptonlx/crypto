@@ -42,7 +42,7 @@ type GetWalletsResponseData struct {
 	Wallets []Wallet `json:"wallets"`
 }
 
-type GetWalletsResponseBody = Response[GetWalletsResponseData]
+type GetWalletsResponseBody = ResponseBody[GetWalletsResponseData]
 
 // Wallets godoc
 // @Summary      Get balances of user's wallets.
@@ -55,22 +55,11 @@ type GetWalletsResponseBody = Response[GetWalletsResponseData]
 // @Failure      500  {object}  ErrorResponseBody
 // @Router       /user/{username}/wallets [get]
 func (h Handlers) Wallets(w http.ResponseWriter, r *http.Request) {
-	//ctx := r.Context()
-	//basicAuthB64, _ := ctx.Value("BASIC_AUTH").(string)
-	//principal, err := mustExtractUsernameFromBasicAuthValue(basicAuthB64)
-	//if err != nil {
-	//	response_types.ErrorNoBody(w, http.StatusForbidden, err)
-	//	return
-	//}
-	//if principal != userName {
-	//	response_types.ErrorNoBody(w, http.StatusForbidden, fmt.Errorf("principal not allowed to access resource"))
-	//	return
-	//}
 	userName := r.PathValue("username")
 
 	walletBalances, err := h.service.GetUserWalletBalanceByUserName(r.Context(), userName)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -84,25 +73,25 @@ func (h Handlers) Wallets(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	response_types.OkJsonBody(w, GetWalletsResponseData{
+	response_types.WriteOkJsonBody(w, GetWalletsResponseData{
 		User:    User(walletBalances.User),
 		Wallets: wallets,
 	})
 }
 
 type CreateUserRequestBody struct {
-	UserName string `json:"username"`
+	UserName string `json:"username" example:"user1"`
 }
 
 type CreatedUser struct {
-	Id       int64  `json:"id" example:"1"`
+	Id       int64  `json:"id" example:"102"`
 	Username string `json:"username" example:"user1"`
 }
 type CreateUserResponseData struct {
 	User *CreatedUser `json:"user"`
 }
 
-type CreateUserResponse = Response[CreateUserResponseData]
+type CreateUserResponseBody = ResponseBody[CreateUserResponseData]
 
 // CreateUser Create godoc
 // @Summary      Create a new user.
@@ -111,23 +100,23 @@ type CreateUserResponse = Response[CreateUserResponseData]
 // @Accept       application/json
 // @Produce      application/json
 // @Param        request body CreateUserRequestBody true "Create User Request Body"
-// @Success      200  {object}  CreateUserResponse
+// @Success      200  {object}  CreateUserResponseBody
 // @Failure      500  {object}  ErrorResponseBody
 // @Router       /user [post]
 func (h Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	form := &CreateUserRequestBody{}
 	json.NewDecoder(r.Body).Decode(form)
 	if form.UserName == "" {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, errors.New("user name is required"))
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, errors.New("user name is required"))
 	}
 
 	user, err := h.service.CreateUser(r.Context(), form.UserName)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 	c := CreatedUser(user)
-	response_types.OkJsonBody(w, CreateUserResponseData{User: &c})
+	response_types.WriteOkJsonBody(w, CreateUserResponseData{User: &c})
 }
 
 type TransactionMetaData struct {
@@ -157,7 +146,7 @@ type TransactionsResponseData struct {
 	Transactions []Transaction `json:"transactions"`
 }
 
-type TransactionsResponseBody = Response[TransactionsResponseData]
+type TransactionsResponseBody = ResponseBody[TransactionsResponseData]
 
 // Transactions godoc
 // @Summary      Get transactions of user's wallets sorted by newest.
@@ -174,7 +163,7 @@ func (h Handlers) Transactions(w http.ResponseWriter, r *http.Request) {
 
 	transactionLedgers, err := h.service.GetUserTransactionsByUserName(r.Context(), userName)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -213,7 +202,7 @@ func (h Handlers) Transactions(w http.ResponseWriter, r *http.Request) {
 			},
 		})
 	}
-	response_types.OkJsonBody(w, TransactionsResponseData{
+	response_types.WriteOkJsonBody(w, TransactionsResponseData{
 		Transactions: transactions,
 	})
 }
@@ -233,7 +222,7 @@ type CreateWalletResponseData struct {
 	Wallet *CreatedWallet `json:"wallet"`
 }
 
-type CreateWalletResponseBody = Response[CreateWalletResponseData]
+type CreateWalletResponseBody = ResponseBody[CreateWalletResponseData]
 
 // CreateWallet Create godoc
 // @Summary      Create a new wallet for user.
@@ -246,20 +235,19 @@ type CreateWalletResponseBody = Response[CreateWalletResponseData]
 // @Failure      500  {object}  ErrorResponseBody
 // @Router       /wallet [post]
 func (h Handlers) CreateWallet(w http.ResponseWriter, r *http.Request) {
-
 	form := &CreateWalletRequestBody{}
 	json.NewDecoder(r.Body).Decode(form)
 	if form.UserName == "" {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, errors.New("user name is required"))
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, errors.New("user name is required"))
 	}
 
 	wallet, err := h.service.CreateWallet(r.Context(), form.UserName, form.Currency)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 
-	response_types.OkJsonBody(w, CreateWalletResponseData{Wallet: &CreatedWallet{
+	response_types.WriteOkJsonBody(w, CreateWalletResponseData{Wallet: &CreatedWallet{
 		Id:            wallet.Id,
 		UserAccountId: wallet.UserAccountId,
 		Balance:       wallet.Balance.String(),
@@ -273,21 +261,20 @@ type DepositRequestBody struct {
 }
 
 type Ledger struct {
-	Id            int64 `json:"id" example:"1"`
-	WalletId      int64 `json:"wallet_id" example:"1"`
-	TransactionId int64 `json:"transaction_id" example:"1749286345000"`
-	//Operation string    `json:"operation" example:"deposit,withdraw,transfer"`
-	EntryType string    `json:"entry_type" example:"credit,debit"`
-	Amount    string    `json:"amount" example:"40.22"`
-	CreatedAt time.Time `json:"created_at"`
-	Balance   string    `json:"balance" example:"2.234"`
+	Id            int64     `json:"id" example:"1214214"`
+	WalletId      int64     `json:"wallet_id" example:"1021"`
+	TransactionId int64     `json:"transaction_id" example:"1749286345000"`
+	EntryType     string    `json:"entry_type" example:"credit"`
+	Amount        string    `json:"amount" example:"40.22"`
+	CreatedAt     time.Time `json:"created_at" example:"2025-06-09T02:02:31.213543+08:00"`
+	Balance       string    `json:"balance" example:"2.234"`
 }
 
 type DepositResponseData struct {
 	Transaction `json:"transaction"`
 }
 
-type DepositResponseBody = Response[DepositResponseData]
+type DepositResponseBody = ResponseBody[DepositResponseData]
 
 // Deposit Create godoc
 // @Summary      Deposit to wallet
@@ -306,32 +293,32 @@ func (h Handlers) Deposit(w http.ResponseWriter, r *http.Request) {
 	basicAuthB64, _ := ctx.Value("BASIC_AUTH").(string)
 	principal, err := mustExtractUsernameFromBasicAuthValue(basicAuthB64)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusUnauthorized, err)
+		response_types.WriteErrorNoBody(w, http.StatusUnauthorized, err)
 		return
 	}
 
 	_walletId := r.PathValue("wallet_id")
 	walletId, err := strconv.Atoi(_walletId)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 	form := &DepositRequestBody{}
 	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 	amount, err := decimal.NewFromString(form.Amount)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 	transaction, ledger, err := h.service.Deposit(ctx, principal, form.Nonce, int64(walletId), amount)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
-	response_types.OkJsonBody(w, DepositResponseData{
+	response_types.WriteOkJsonBody(w, DepositResponseData{
 		Transaction: Transaction{
 			Ledgers: []Ledger{
 				{
@@ -363,7 +350,7 @@ type WithdrawResponseData struct {
 	Transaction `json:"transaction"`
 }
 
-type WithdrawResponseBody = Response[WithdrawResponseData]
+type WithdrawResponseBody = ResponseBody[WithdrawResponseData]
 
 // Withdraw Create godoc
 // @Summary      Withdraw from wallet
@@ -382,29 +369,29 @@ func (h Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 	basicAuthB64, _ := ctx.Value("BASIC_AUTH").(string)
 	principal, err := mustExtractUsernameFromBasicAuthValue(basicAuthB64)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusUnauthorized, err)
+		response_types.WriteErrorNoBody(w, http.StatusUnauthorized, err)
 		return
 	}
 
 	_walletId := r.PathValue("wallet_id")
 	walletId, err := strconv.Atoi(_walletId)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 	form := &WithdrawRequestBody{}
 	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 	amount, err := decimal.NewFromString(form.Amount)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 	transaction, ledger, err := h.service.Withdraw(ctx, principal, form.Nonce, int64(walletId), amount)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -414,7 +401,7 @@ func (h Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 		amountP = &_amount
 	}
 
-	response_types.OkJsonBody(w, DepositResponseData{
+	response_types.WriteOkJsonBody(w, DepositResponseData{
 		Transaction: Transaction{
 			Ledgers: []Ledger{
 				{
@@ -451,7 +438,7 @@ type TransferResponseData struct {
 	Transaction `json:"transaction"`
 }
 
-type TransferResponseBody = Response[TransferResponseData]
+type TransferResponseBody = ResponseBody[TransferResponseData]
 
 // Transfer Create godoc
 // @Summary      Transfer to another wallet.
@@ -470,30 +457,30 @@ func (h Handlers) Transfer(w http.ResponseWriter, r *http.Request) {
 	basicAuthB64, _ := ctx.Value("BASIC_AUTH").(string)
 	principal, err := mustExtractUsernameFromBasicAuthValue(basicAuthB64)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusUnauthorized, err)
+		response_types.WriteErrorNoBody(w, http.StatusUnauthorized, err)
 		return
 	}
 
 	_walletId := r.PathValue("wallet_id")
 	walletId, err := strconv.Atoi(_walletId)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 	form := &TransferRequestBody{}
 	if err := json.NewDecoder(r.Body).Decode(form); err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 	amount, err := decimal.NewFromString(form.Amount)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 
 	transaction, ledgersS, err := h.service.Transfer(ctx, principal, form.Nonce, int64(walletId), form.DestinationWalletId, amount)
 	if err != nil {
-		response_types.ErrorNoBody(w, http.StatusBadRequest, err)
+		response_types.WriteErrorNoBody(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -516,7 +503,7 @@ func (h Handlers) Transfer(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	response_types.OkJsonBody(w, DepositResponseData{
+	response_types.WriteOkJsonBody(w, DepositResponseData{
 		Transaction: Transaction{
 			Ledgers:     ledgers,
 			Id:          transaction.Id,
@@ -551,11 +538,14 @@ func mustExtractUsernameFromBasicAuthValue(basicAuthB64 string) (string, error) 
 
 // Types
 
-type Response[T any] struct {
+var _ = response_types.ResponseBody[struct{}](ResponseBody[struct{}]{})
+
+type ResponseBody[T any] struct {
 	Data  T       `json:"data"`
-	Error *string `json:"error"`
+	Error *string `json:"error" example:"" extensions:"x-nullable"`
 }
 
-var _ = response_types.Response[int](Response[int]{})
-
-type ErrorResponseBody = response_types.Response[struct{}]
+type ErrorResponseBody = struct {
+	Data  *int    `json:"data" example:"0"`
+	Error *string `json:"error" example:"internal_server_error"`
+}

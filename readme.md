@@ -14,22 +14,23 @@ cp ./pre-commit.sample .git/hooks/pre-commit
 
 2. PostgreSQL instance
 
-- execute DDL on a new database: `./schemas/init_schema_001.sql`
+- execute DDL on a new database: `./schemas/schema_001_init.sql`
 
 ### Commands
 
 #### Start Server
-`DATABASE_URL=<conn_string> go run ./cmd/server` Start HTTP server.
+Start HTTP server:\
+`DATABASE_URL=<conn_string> go run ./cmd/server`
 
 #### Run e2e Tests
+Execute [test_plan](./test_plan.md):\
 `SERVER_URL=<server_url> N=<parallel_runs> go run ./cmd/e2e_tests`
-Execute [test_plan](./test_plan.md).
 
 #### Generate API Docs
 
 Install [swag](https://github.com/swaggo/swag) and run:
 
-`swag init --parseDependency --dir ./src/controller/mux/user[,<directories>]`
+`swag init --parseDependency --dir ./src/controller/mux/user`
 
 # Design/Development Approach
 
@@ -81,12 +82,12 @@ The tests are end-to-end and will require external connections (db etc.).
 
 - User: an account that can own wallets.
 - Wallet: Value store of a currency owned by a User.
-- Transaction: A record that changes a wallet's balance.
-- Ledger: Authoritative set of records for wallet debit/credit.
+- Transaction: An operation (withdraw/deposit/transfer) requested by a user.
+- Ledger: An authoritative record for change in wallet value. A transaction can consist of multiple ledgers.
 
 ### Functional Requirements
 
-- Create new user if not exists.
+- Create new user.
 - Each user can have multiple wallets.
 - Supports deposit and withdrawal.
 - Supports transfer from/to wallets.

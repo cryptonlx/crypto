@@ -51,7 +51,7 @@ func main() {
 
 	go func() {
 		log.Println("Listening on " + configParams.ServerParams.Port)
-		limiter := rate.NewLimiter(1000, 1000)
+		limiter := rate.NewLimiter(1200, 1200)
 
 		server := &http.Server{
 			Addr: configParams.ServerParams.Port,

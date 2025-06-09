@@ -8,19 +8,19 @@ definitions:
         example: "2.234"
         type: string
       created_at:
+        example: "2022-01-01T00:00:00+00:00"
         type: string
       entry_type:
-        description: Operation string    `json:"operation" example:"deposit,withdraw,transfer"`
-        example: credit,debit
+        example: credit
         type: string
       id:
-        example: 1
+        example: 1214214
         type: integer
       transaction_id:
         example: 1749286345000
         type: integer
       wallet_id:
-        example: 1
+        example: 1021
         type: integer
     type: object
   github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction:
@@ -82,14 +82,17 @@ definitions:
   user.CreateUserRequestBody:
     properties:
       username:
+        example: user1
         type: string
     type: object
-  user.CreateUserResponse:
+  user.CreateUserResponseBody:
     properties:
       data:
         $ref: '#/definitions/user.CreateUserResponseData'
       error:
+        example: ""
         type: string
+        x-nullable: true
     type: object
   user.CreateUserResponseData:
     properties:
@@ -108,7 +111,9 @@ definitions:
       data:
         $ref: '#/definitions/user.CreateWalletResponseData'
       error:
+        example: ""
         type: string
+        x-nullable: true
     type: object
   user.CreateWalletResponseData:
     properties:
@@ -118,7 +123,7 @@ definitions:
   user.CreatedUser:
     properties:
       id:
-        example: 1
+        example: 102
         type: integer
       username:
         example: user1
@@ -153,7 +158,9 @@ definitions:
       data:
         $ref: '#/definitions/user.DepositResponseData'
       error:
+        example: ""
         type: string
+        x-nullable: true
     type: object
   user.DepositResponseData:
     properties:
@@ -161,13 +168,22 @@ definitions:
         $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction'
     type: object
   user.ErrorResponseBody:
+    properties:
+      data:
+        example: 0
+        type: integer
+      error:
+        example: internal_server_error
+        type: string
     type: object
   user.GetWalletsResponseBody:
     properties:
       data:
         $ref: '#/definitions/user.GetWalletsResponseData'
       error:
+        example: ""
         type: string
+        x-nullable: true
     type: object
   user.GetWalletsResponseData:
     properties:
@@ -183,7 +199,9 @@ definitions:
       data:
         $ref: '#/definitions/user.TransactionsResponseData'
       error:
+        example: ""
         type: string
+        x-nullable: true
     type: object
   user.TransactionsResponseData:
     properties:
@@ -191,6 +209,32 @@ definitions:
         items:
           $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction'
         type: array
+    type: object
+  user.TransferRequestBody:
+    properties:
+      amount:
+        example: "10.23"
+        type: string
+      destination_wallet_id:
+        example: 2
+        type: integer
+      nonce:
+        example: 1749286345000
+        type: integer
+    type: object
+  user.TransferResponseBody:
+    properties:
+      data:
+        $ref: '#/definitions/user.TransferResponseData'
+      error:
+        example: ""
+        type: string
+        x-nullable: true
+    type: object
+  user.TransferResponseData:
+    properties:
+      transaction:
+        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction'
     type: object
   user.WithdrawRequestBody:
     properties:
@@ -206,7 +250,9 @@ definitions:
       data:
         $ref: '#/definitions/user.WithdrawResponseData'
       error:
+        example: ""
         type: string
+        x-nullable: true
     type: object
   user.WithdrawResponseData:
     properties:
@@ -234,7 +280,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/user.CreateUserResponse'
+            $ref: '#/definitions/user.CreateUserResponseBody'
         "500":
           description: Internal Server Error
           schema:
@@ -349,6 +395,39 @@ paths:
       security:
       - BasicAuth: []
       summary: Deposit to wallet
+      tags:
+      - wallet
+  /wallet/{wallet_id}/transfer:
+    post:
+      consumes:
+      - application/json
+      description: Transfer to another wallet.
+      parameters:
+      - description: wallet id
+        in: path
+        name: wallet_id
+        required: true
+        type: string
+      - description: Create Transfer Request Body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.TransferRequestBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.TransferResponseBody'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.ErrorResponseBody'
+      security:
+      - BasicAuth: []
+      summary: Transfer to another wallet.
       tags:
       - wallet
   /wallet/{wallet_id}/withdraw:

@@ -31,6 +31,5 @@ func LoadParams() (c Params, e error) {
 	dbUrl := os.Getenv("DATABASE_URL")
 	c.DatabaseParams.ConnString = dbUrl
 
-	// server
 	return c, nil
 }

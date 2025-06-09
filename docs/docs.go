@@ -43,7 +43,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/user.CreateUserResponse"
+                            "$ref": "#/definitions/user.CreateUserResponseBody"
                         }
                     },
                     "500": {
@@ -223,6 +223,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/wallet/{wallet_id}/transfer": {
+            "post": {
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "description": "Transfer to another wallet.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallet"
+                ],
+                "summary": "Transfer to another wallet.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "wallet id",
+                        "name": "wallet_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create Transfer Request Body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.TransferRequestBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.TransferResponseBody"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponseBody"
+                        }
+                    }
+                }
+            }
+        },
         "/wallet/{wallet_id}/withdraw": {
             "post": {
                 "security": [
@@ -289,16 +341,16 @@ const docTemplate = `{
                     "example": "2.234"
                 },
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2022-01-01T00:00:00+00:00"
                 },
                 "entry_type": {
-                    "description": "Operation string    ` + "`" + `json:\"operation\" example:\"deposit,withdraw,transfer\"` + "`" + `",
                     "type": "string",
-                    "example": "credit,debit"
+                    "example": "credit"
                 },
                 "id": {
                     "type": "integer",
-                    "example": 1
+                    "example": 1214214
                 },
                 "transaction_id": {
                     "type": "integer",
@@ -306,7 +358,7 @@ const docTemplate = `{
                 },
                 "wallet_id": {
                     "type": "integer",
-                    "example": 1
+                    "example": 1021
                 }
             }
         },
@@ -395,18 +447,21 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "user1"
                 }
             }
         },
-        "user.CreateUserResponse": {
+        "user.CreateUserResponseBody": {
             "type": "object",
             "properties": {
                 "data": {
                     "$ref": "#/definitions/user.CreateUserResponseData"
                 },
                 "error": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": ""
                 }
             }
         },
@@ -436,7 +491,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/user.CreateWalletResponseData"
                 },
                 "error": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": ""
                 }
             }
         },
@@ -453,7 +510,7 @@ const docTemplate = `{
             "properties": {
                 "id": {
                     "type": "integer",
-                    "example": 1
+                    "example": 102
                 },
                 "username": {
                     "type": "string",
@@ -502,7 +559,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/user.DepositResponseData"
                 },
                 "error": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": ""
                 }
             }
         },
@@ -515,7 +574,17 @@ const docTemplate = `{
             }
         },
         "user.ErrorResponseBody": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "error": {
+                    "type": "string",
+                    "example": "internal_server_error"
+                }
+            }
         },
         "user.GetWalletsResponseBody": {
             "type": "object",
@@ -524,7 +593,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/user.GetWalletsResponseData"
                 },
                 "error": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": ""
                 }
             }
         },
@@ -549,7 +620,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/user.TransactionsResponseData"
                 },
                 "error": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": ""
                 }
             }
         },
@@ -561,6 +634,44 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction"
                     }
+                }
+            }
+        },
+        "user.TransferRequestBody": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "10.23"
+                },
+                "destination_wallet_id": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "nonce": {
+                    "type": "integer",
+                    "example": 1749286345000
+                }
+            }
+        },
+        "user.TransferResponseBody": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/user.TransferResponseData"
+                },
+                "error": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": ""
+                }
+            }
+        },
+        "user.TransferResponseData": {
+            "type": "object",
+            "properties": {
+                "transaction": {
+                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction"
                 }
             }
         },
@@ -584,7 +695,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/user.WithdrawResponseData"
                 },
                 "error": {
-                    "type": "string"
+                    "type": "string",
+                    "x-nullable": true,
+                    "example": ""
                 }
             }
         },

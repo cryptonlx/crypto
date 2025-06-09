@@ -16,6 +16,65 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// CurrencyType
+// Subset of ISO4217
+type CurrencyType string
+
+const CurrencyTypeUSD CurrencyType = "USD"
+const CurrencyTypeSGD CurrencyType = "SGD"
+
+type User struct {
+	Id       int64
+	Username string
+}
+
+type Wallet struct {
+	Id            int64
+	UserAccountId int64
+	Currency      string
+	Balance       decimal.Decimal
+}
+
+type UserWallet struct {
+	User   User
+	Wallet Wallet
+}
+type UserWallets struct {
+	User    User
+	Wallets []Wallet
+}
+
+type TransactionMetaData struct {
+	SourceWalletId *int64           `json:"source_wallet_id" example:"1"`
+	Amount         *decimal.Decimal `json:"amount" example:"1"`
+}
+
+type Transaction struct {
+	Id          int64
+	RequestorId int64
+	Nonce       int64
+	Status      string
+	Operation   string
+	CreatedAt   time.Time
+	MetaData    TransactionMetaData
+}
+
+type Ledger struct {
+	Id            int64           `json:"id"`
+	WalletId      int64           `json:"wallet_id"`
+	EntryType     string          `json:"entry_type"`
+	Amount        decimal.Decimal `json:"amount"`
+	CreatedAt     time.Time       `json:"created_at"`
+	Balance       decimal.Decimal `json:"balance"`
+	TransactionId int64           `json:"transaction_id"`
+}
+
+type TransactionLedgers struct {
+	Transaction Transaction
+	//Ledgers     []Ledger
+	Ledgers []Ledger
+}
+
 type Repo struct {
 	conn *pgxpool.Pool
 }
@@ -26,9 +85,127 @@ func New(conn *pgxpool.Pool) *Repo {
 	}
 }
 
-type User struct {
-	Id       int64
-	Username string
+func (r *Repo) CreateUser(ctx context.Context, username string) (User, error) {
+	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.ReadCommitted,
+	})
+	if err != nil {
+		return User{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	user, err := r.createUser(ctx, tx, username)
+	if err != nil {
+		return User{}, err
+	}
+
+	tx.Commit(ctx)
+	return user, nil
+}
+
+func (r *Repo) UserWallets(ctx context.Context, username string) (UserWallets, error) {
+	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.RepeatableRead,
+	})
+	if err != nil {
+		return UserWallets{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	user, err := r.user(ctx, tx, username)
+	if err != nil {
+		return UserWallets{}, err
+	}
+
+	wallets, err := r.walletsByUserId(ctx, tx, user.Id)
+	if err != nil {
+		return UserWallets{}, err
+	}
+	return UserWallets{
+		User:    *user,
+		Wallets: wallets,
+	}, nil
+}
+
+func (r *Repo) User(ctx context.Context, username string) (*User, error) {
+	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.RepeatableRead,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	user, err := r.user(ctx, tx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (r *Repo) Transactions(ctx context.Context, username string) ([]TransactionLedgers, error) {
+	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.RepeatableRead,
+	})
+	if err != nil {
+		return []TransactionLedgers{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	user, err := r.user(ctx, tx, username)
+	if err != nil {
+		return []TransactionLedgers{}, err
+	}
+
+	transactions, err := r.transactionLedgersByUserId(ctx, tx, user.Id)
+	if err != nil {
+		return []TransactionLedgers{}, err
+	}
+	return transactions, nil
+}
+
+func (r *Repo) CreateWallet(ctx context.Context, username string, currency CurrencyType) (Wallet, error) {
+	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
+		IsoLevel: pgx.ReadCommitted,
+	})
+	if err != nil {
+		return Wallet{}, err
+	}
+	defer tx.Rollback(ctx)
+	user, err := r.user(ctx, tx, username)
+	if err != nil {
+		return Wallet{}, err
+	}
+
+	wallet, err := r.createWallet(ctx, tx, user.Id, currency)
+	if err != nil {
+		return Wallet{}, err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return Wallet{}, err
+	}
+	return wallet, nil
+}
+func (r *Repo) createUser(ctx context.Context, tx pgx.Tx, username string) (User, error) {
+	if tx == nil {
+		return User{}, utils.NilTxError
+	}
+	row := tx.QueryRow(ctx, "insert into user_accounts(username) VALUES ($1) RETURNING id, username", username)
+
+	var user User
+	err := row.Scan(&user.Id, &user.Username)
+
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			err = utils.ToError(pgErr)
+		}
+		return User{}, err
+	}
+	return user, nil
 }
 
 func (r *Repo) user(ctx context.Context, tx pgx.Tx, username string) (*User, error) {
@@ -60,12 +237,7 @@ func (r *Repo) user(ctx context.Context, tx pgx.Tx, username string) (*User, err
 	return &users[0], nil
 }
 
-type UserWallet struct {
-	User   User
-	Wallet Wallet
-}
-
-func (r *Repo) userWalletByWalletId(ctx context.Context, tx pgx.Tx, walletId int64) (*UserWallet, error) {
+func (r *Repo) userWalletByWalletIdForUpdate(ctx context.Context, tx pgx.Tx, walletId int64) (*UserWallet, error) {
 	if tx == nil {
 		return nil, utils.NilTxError
 	}
@@ -94,25 +266,6 @@ func (r *Repo) userWalletByWalletId(ctx context.Context, tx pgx.Tx, walletId int
 	return &users[0], nil
 }
 
-func (r *Repo) createUser(ctx context.Context, tx pgx.Tx, username string) (User, error) {
-	if tx == nil {
-		return User{}, utils.NilTxError
-	}
-	row := tx.QueryRow(ctx, "insert into user_accounts(username) VALUES ($1) RETURNING id, username", username)
-
-	var user User
-	err := row.Scan(&user.Id, &user.Username)
-
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			err = utils.ToError(pgErr)
-		}
-		return User{}, err
-	}
-	return user, nil
-}
-
 func (r *Repo) createWallet(ctx context.Context, tx pgx.Tx, username int64, currency CurrencyType) (Wallet, error) {
 	row := tx.QueryRow(ctx, "insert into wallets(user_account_id, currency, balance) VALUES ($1,$2,$3) RETURNING id, user_account_id, currency, balance", username, currency, decimal.Zero)
 
@@ -129,7 +282,7 @@ func (r *Repo) createWallet(ctx context.Context, tx pgx.Tx, username int64, curr
 	return wallet, nil
 }
 
-func (r *Repo) getWalletsByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]Wallet, error) {
+func (r *Repo) walletsByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]Wallet, error) {
 	if tx == nil {
 		return []Wallet{}, utils.NilTxError
 	}
@@ -153,16 +306,10 @@ func (r *Repo) getWalletsByUserId(ctx context.Context, tx pgx.Tx, userId int64) 
 	return wallets, nil
 }
 
-type TransactionLedgers struct {
-	Transaction Transaction
-	//Ledgers     []Ledger
-	Ledgers []Ledger
-}
-
-// getTransactionLedgersByUserId
+// transactionLedgersByUserId
 // Get transactions requested by user. Ledgers of other user's wallet will be omitted.
 // Includes ledgers of user's wallet not recorded from a transaction requested by the user.
-func (r *Repo) getTransactionLedgersByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]TransactionLedgers, error) {
+func (r *Repo) transactionLedgersByUserId(ctx context.Context, tx pgx.Tx, userId int64) ([]TransactionLedgers, error) {
 	if tx == nil {
 		return []TransactionLedgers{}, utils.NilTxError
 	}
@@ -207,132 +354,6 @@ group by t.id order by t.created_at desc
 	return transactionLedgers, nil
 }
 
-type Wallet struct {
-	Id            int64
-	UserAccountId int64
-	Currency      string
-	Balance       decimal.Decimal
-}
-
-type UserWallets struct {
-	User    User
-	Wallets []Wallet
-}
-
-func (r *Repo) UserWallets(ctx context.Context, username string) (UserWallets, error) {
-	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
-		IsoLevel: pgx.RepeatableRead,
-	})
-	if err != nil {
-		return UserWallets{}, err
-	}
-	defer tx.Rollback(ctx)
-
-	user, err := r.user(ctx, tx, username)
-	if err != nil {
-		return UserWallets{}, err
-	}
-
-	wallets, err := r.getWalletsByUserId(ctx, tx, user.Id)
-	if err != nil {
-		return UserWallets{}, err
-	}
-	return UserWallets{
-		User:    *user,
-		Wallets: wallets,
-	}, nil
-}
-
-func (r *Repo) User(ctx context.Context, username string) (*User, error) {
-	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
-		IsoLevel: pgx.RepeatableRead,
-	})
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback(ctx)
-
-	user, err := r.user(ctx, tx, username)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-type UserTransactions struct {
-	User         User
-	Transactions []Transaction
-}
-
-func (r *Repo) Transactions(ctx context.Context, username string) ([]TransactionLedgers, error) {
-	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
-		IsoLevel: pgx.RepeatableRead,
-	})
-	if err != nil {
-		return []TransactionLedgers{}, err
-	}
-	defer tx.Rollback(ctx)
-
-	user, err := r.user(ctx, tx, username)
-	if err != nil {
-		return []TransactionLedgers{}, err
-	}
-
-	transactions, err := r.getTransactionLedgersByUserId(ctx, tx, user.Id)
-	if err != nil {
-		return []TransactionLedgers{}, err
-	}
-	return transactions, nil
-}
-
-func (r *Repo) CreateUser(ctx context.Context, username string) (User, error) {
-	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
-		IsoLevel: pgx.ReadCommitted,
-	})
-	if err != nil {
-		return User{}, err
-	}
-	defer tx.Rollback(ctx)
-
-	user, err := r.createUser(ctx, tx, username)
-	if err != nil {
-		return User{}, err
-	}
-
-	tx.Commit(ctx)
-	return user, nil
-}
-
-// CurrencyType
-// Subset of ISO4217
-type CurrencyType string
-
-const CurrencyTypeUSD CurrencyType = "USD"
-const CurrencyTypeSGD CurrencyType = "SGD"
-
-func (r *Repo) CreateWallet(ctx context.Context, username string, currency CurrencyType) (Wallet, error) {
-	tx, err := r.conn.BeginTx(ctx, pgx.TxOptions{
-		IsoLevel: pgx.ReadCommitted,
-	})
-	if err != nil {
-		return Wallet{}, err
-	}
-	defer tx.Rollback(ctx)
-	user, err := r.user(ctx, tx, username)
-	if err != nil {
-		return Wallet{}, err
-	}
-
-	wallet, err := r.createWallet(ctx, tx, user.Id, currency)
-	if err != nil {
-		return Wallet{}, err
-	}
-
-	tx.Commit(ctx)
-	return wallet, nil
-}
-
 func (r *Repo) Deposit(requestor string, ctx context.Context, nonce int64, walletId int64, amount decimal.Decimal) (Transaction, Ledger, error) {
 	if !amount.IsPositive() {
 		return Transaction{}, Ledger{}, errors.New("amount negative")
@@ -357,7 +378,7 @@ func (r *Repo) Deposit(requestor string, ctx context.Context, nonce int64, walle
 	}
 	defer tx.Rollback(ctx)
 
-	userWallet, err := r.userWalletByWalletId(ctx, tx, walletId)
+	userWallet, err := r.userWalletByWalletIdForUpdate(ctx, tx, walletId)
 	if err != nil {
 		return Transaction{}, Ledger{}, err
 	}
@@ -410,7 +431,7 @@ func (r *Repo) Withdraw(requestor string, ctx context.Context, nonce int64, wall
 	}
 	defer tx.Rollback(ctx)
 
-	userWallet, err := r.userWalletByWalletId(ctx, tx, walletId)
+	userWallet, err := r.userWalletByWalletIdForUpdate(ctx, tx, walletId)
 	if err != nil {
 		return Transaction{}, Ledger{}, err
 	}
@@ -469,7 +490,7 @@ func (r *Repo) Transfer(requestor string, ctx context.Context, nonce int64, sour
 	}
 	defer tx.Rollback(ctx)
 
-	sourceUserWallet, err := r.userWalletByWalletId(ctx, tx, sourceWalletId)
+	sourceUserWallet, err := r.userWalletByWalletIdForUpdate(ctx, tx, sourceWalletId)
 	if err != nil {
 		return Transaction{}, []Ledger{}, err
 	}
@@ -477,7 +498,7 @@ func (r *Repo) Transfer(requestor string, ctx context.Context, nonce int64, sour
 		return Transaction{}, []Ledger{}, errors.New("requestor and wallet owner mismatch")
 	}
 
-	destinationUserWallet, err := r.userWalletByWalletId(ctx, tx, destinationWalletId)
+	destinationUserWallet, err := r.userWalletByWalletIdForUpdate(ctx, tx, destinationWalletId)
 	if err != nil {
 		return Transaction{}, []Ledger{}, err
 	}
@@ -530,14 +551,21 @@ func (r *Repo) Transfer(requestor string, ctx context.Context, nonce int64, sour
 	return transaction, []Ledger{withdrawLedger, depositledger}, nil
 }
 
-type Ledger struct {
-	Id            int64           `json:"id"`
-	WalletId      int64           `json:"wallet_id"`
-	EntryType     string          `json:"entry_type"`
-	Amount        decimal.Decimal `json:"amount"`
-	CreatedAt     time.Time       `json:"created_at"`
-	Balance       decimal.Decimal `json:"balance"`
-	TransactionId int64           `json:"transaction_id"`
+func (r *Repo) UpdateTransactionStatus(ctx context.Context, id int64, status string) error {
+	tx, err := r.conn.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback(ctx)
+	_, err = tx.Exec(ctx, `
+    UPDATE transactions
+    SET status = $1 where id = $2`, status, id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (r *Repo) appendLedger(ctx context.Context, tx pgx.Tx, walletId int64, transactionId int64, entryType string, amount, balance decimal.Decimal) (Ledger, error) {
@@ -555,21 +583,6 @@ func (r *Repo) appendLedger(ctx context.Context, tx pgx.Tx, walletId int64, tran
 		return Ledger{}, err
 	}
 	return l, nil
-}
-
-type TransactionMetaData struct {
-	SourceWalletId *int64           `json:"source_wallet_id" example:"1"`
-	Amount         *decimal.Decimal `json:"amount" example:"1"`
-}
-
-type Transaction struct {
-	Id          int64
-	RequestorId int64
-	Nonce       int64
-	Status      string
-	Operation   string
-	CreatedAt   time.Time
-	MetaData    TransactionMetaData
 }
 
 func (r *Repo) newTransaction(ctx context.Context, nonce, requestorId int64, operation string, metaData map[string]any) (Transaction, error) {
@@ -621,21 +634,4 @@ func (r *Repo) updateTransactionStatus(ctx context.Context, tx pgx.Tx, id int64,
     UPDATE transactions
     SET status = $1 where id = $2`, status, id)
 	return err
-}
-
-func (r *Repo) UpdateTransactionStatus(ctx context.Context, id int64, status string) error {
-	tx, err := r.conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer tx.Rollback(ctx)
-	_, err = tx.Exec(ctx, `
-    UPDATE transactions
-    SET status = $1 where id = $2`, status, id)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit(ctx)
 }

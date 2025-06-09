@@ -558,7 +558,7 @@ func T_0010(client *client.Client) {
 }
 
 func SetupUserAndWalletCreation(client *client.Client, logPrefix string, currency string) (username string, wallets []client.Wallet) {
-	username = NewRandomUserName(logPrefix, 6, 0)
+	username = NewRandomUserName(logPrefix, 12, 0)
 	createUserResponseData, responseStatusCode, err := client.CreateUser(username)
 	if responseStatusCode != http.StatusOK {
 		log.Fatalf("[%s_001] SETUP CreateUser should succeed. responseStatusCode=%d, err=%v", logPrefix, responseStatusCode, err)

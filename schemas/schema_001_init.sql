@@ -36,7 +36,6 @@ comment ON COLUMN transactions.operation IS 'deposit, withdrawal, transfer';
 comment on column  transactions.nonce is '13 digit epoch i.e 1749199885000';
 comment on column  transactions.status is 'pending, success, error_*';
 
-
 CREATE TABLE ledgers
 (
     id         BIGINT PRIMARY key generated always AS IDENTITY,

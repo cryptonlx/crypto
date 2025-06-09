@@ -65,7 +65,7 @@ func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error
 		"username": username,
 	}
 
-	return httpPost[CreateUserResponseBody](baseUrl, requestBody, nil)
+	return httpPost[CreateUserResponseBody](c.httpClient, baseUrl, requestBody, nil)
 }
 
 type TransactionMetaData struct {
@@ -105,10 +105,8 @@ type User struct {
 }
 
 type Ledger struct {
-	Id       int64 `json:"id" example:"1"`
-	WalletId int64 `json:"wallet_id" example:"1"`
-	Nonce    int64 `json:"nonce" example:"1749286345000"`
-	//Operation string    `json:"operation" example:"deposit,withdraw,transfer"`
+	Id        int64     `json:"id" example:"1"`
+	WalletId  int64     `json:"wallet_id" example:"1"`
 	EntryType string    `json:"entry_type" example:"credit,debit"`
 	Amount    string    `json:"amount" example:"40.22"`
 	CreatedAt time.Time `json:"created_at"`
@@ -128,7 +126,7 @@ func (c *Client) Deposit(username string, walletId int64, amount decimal.Decimal
 		"nonce":  time.Now().UnixMilli(),
 	}
 
-	return httpPost[DepositResponseBody](baseUrl, requestBody, []string{username, ""})
+	return httpPost[DepositResponseBody](c.httpClient, baseUrl, requestBody, []string{username, ""})
 }
 
 type WithdrawResponseData struct {
@@ -144,7 +142,7 @@ func (c *Client) Withdraw(username string, walletId int64, amount decimal.Decima
 		"nonce":  time.Now().UnixMilli(),
 	}
 
-	return httpPost[WithdrawResponseBody](baseUrl, requestBody, []string{username, ""})
+	return httpPost[WithdrawResponseBody](c.httpClient, baseUrl, requestBody, []string{username, ""})
 }
 
 type CreateWalletResponseData struct {
@@ -164,7 +162,7 @@ func (c *Client) CreateWallet(username string, currency string) (CreateWalletRes
 		"username": username,
 		"currency": currency,
 	}
-	return httpPost[CreateWalletResponseBody](baseUrl, requestBody, nil)
+	return httpPost[CreateWalletResponseBody](c.httpClient, baseUrl, requestBody, nil)
 }
 
 type TransferResponseData struct {
@@ -180,7 +178,7 @@ func (c *Client) Transfer(username string, fromWalletId int64, toWalletId int64,
 		"amount":                amount.String(),
 		"nonce":                 time.Now().UnixMilli(),
 	}
-	return httpPost[TransferResponseBody](baseUrl, requestBody, []string{username, ""})
+	return httpPost[TransferResponseBody](c.httpClient, baseUrl, requestBody, []string{username, ""})
 }
 
 type ResponseBody[T any] struct {

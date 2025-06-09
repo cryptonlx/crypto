@@ -6,9 +6,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
+	"time"
 )
 
-func httpPost[T ResponseBody[V], V any](baseUrl string, requestBody map[string]interface{}, basicAuthUsernamePassword []string) (_jsonResponseBody T, _statusCode int, _clientError error) {
+var postLock sync.Mutex
+
+func httpPost[T ResponseBody[V], V any](httpClient *http.Client, baseUrl string, requestBody map[string]interface{}, basicAuthUsernamePassword []string) (_jsonResponseBody T, _statusCode int, _clientError error) {
+	postLock.Lock()
+	time.Sleep(1 * time.Millisecond)
+	defer postLock.Unlock()
 	var t T
 	bb, clientError := json.Marshal(requestBody)
 	if clientError != nil {
@@ -25,7 +32,7 @@ func httpPost[T ResponseBody[V], V any](baseUrl string, requestBody map[string]i
 		req.SetBasicAuth(basicAuthUsernamePassword[0], basicAuthUsernamePassword[1])
 	}
 
-	resp, clientError := http.DefaultClient.Do(req)
+	resp, clientError := httpClient.Do(req)
 	if clientError != nil {
 		return t, 0, clientError
 	}
@@ -48,7 +55,12 @@ func httpPost[T ResponseBody[V], V any](baseUrl string, requestBody map[string]i
 	return t, resp.StatusCode, clientError
 }
 
+var getLock sync.Mutex
+
 func httpGet[T ResponseBody[V], V any](httpClient *http.Client, fullURL string, queryParams map[string]interface{}) (jsonResponseBody T, statusCode int, _clientError error) {
+	getLock.Lock()
+	time.Sleep(1 * time.Millisecond)
+	defer getLock.Unlock()
 	var t T
 
 	req, clientError := http.NewRequest("GET", fullURL, nil)
