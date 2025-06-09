@@ -58,7 +58,8 @@ psql -d cryptocom < ./schemas/schema_001_up_init.sql
 ```
 go run ./cmd/server
 ```
-[API Docs](#api-endpoints) @ http://localhost:8080/swagger/index.html
+
+See [API Endpoints](#api-endpoints) for API reference.
 
 2. #### Run e2e Tests
 
@@ -137,6 +138,9 @@ The username must match:
 Install [swag](https://github.com/swaggo/swag) and generate docs:
 
 `swag init --parseDependency --dir ./src/controller/mux/user`
+
+#### API Reference
+Go to http://localhost:8080/swagger/index.html after running local server.
 
 #### Endpoints
 
