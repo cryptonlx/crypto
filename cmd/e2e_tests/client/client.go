@@ -69,15 +69,15 @@ func (c *Client) CreateUser(username string) (CreateUserResponseBody, int, error
 }
 
 type TransactionMetaData struct {
-	SourceWalletId *int64  `json:"source_wallet_id" example:"1"`
-	Amount         *string `json:"amount" example:"1"`
+	SourceWalletId *int64  `json:"source_wallet_id"`
+	Amount         *string `json:"amount"`
 }
 
 type Transaction struct {
 	Ledgers []Ledger `json:"ledgers"`
 
-	Id          int64               `json:"id" example:"1"`
-	RequestorId int64               `json:"requestor_id" example:"1"`
+	Id          int64               `json:"id"`
+	RequestorId int64               `json:"requestor_id"`
 	Nonce       int64               `json:"nonce"`
 	Status      string              `json:"status"`
 	Operation   string              `json:"operation"`
@@ -100,17 +100,17 @@ func (c *Client) Transactions(username string) (TransactionResponseBody, int, er
 }
 
 type User struct {
-	Username string `json:"username" example:"tester_123"`
-	Id       int64  `json:"id" example:"1"`
+	Username string `json:"username"`
+	Id       int64  `json:"id"`
 }
 
 type Ledger struct {
-	Id        int64     `json:"id" example:"1"`
-	WalletId  int64     `json:"wallet_id" example:"1"`
-	EntryType string    `json:"entry_type" example:"credit,debit"`
-	Amount    string    `json:"amount" example:"40.22"`
+	Id        int64     `json:"id"`
+	WalletId  int64     `json:"wallet_id"`
+	EntryType string    `json:"entry_type"`
+	Amount    string    `json:"amount"`
 	CreatedAt time.Time `json:"created_at"`
-	Balance   string    `json:"balance" example:"2.234"`
+	Balance   string    `json:"balance"`
 }
 
 type DepositResponseData struct {

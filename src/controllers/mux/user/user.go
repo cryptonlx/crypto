@@ -52,7 +52,7 @@ type GetWalletsResponseBody = ResponseBody[GetWalletsResponseData]
 // @Produce      application/json
 // @Param        user_id   					path      string  true  "username"
 // @Success      200  {object}  GetWalletsResponseBody
-// @Failure      500  {object}  ErrorResponseBody
+// @Failure      500  {object}  ErrorResponseBody500
 // @Router       /user/{username}/wallets [get]
 func (h Handlers) Wallets(w http.ResponseWriter, r *http.Request) {
 	userName := r.PathValue("username")
@@ -101,7 +101,8 @@ type CreateUserResponseBody = ResponseBody[CreateUserResponseData]
 // @Produce      application/json
 // @Param        request body CreateUserRequestBody true "Create User Request Body"
 // @Success      200  {object}  CreateUserResponseBody
-// @Failure      500  {object}  ErrorResponseBody
+// @Failure      400  {object}  ErrorResponseBody400
+// @Failure      500  {object}  ErrorResponseBody500
 // @Router       /user [post]
 func (h Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	form := &CreateUserRequestBody{}
@@ -120,8 +121,8 @@ func (h Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 type TransactionMetaData struct {
-	SourceWalletId *int64  `json:"source_wallet_id" example:"1"`
-	Amount         *string `json:"amount" example:"1"`
+	SourceWalletId *int64  `json:"source_wallet_id" example:"1021"`
+	Amount         *string `json:"amount" example:"40.1122"`
 }
 
 type Transaction struct {
@@ -129,10 +130,10 @@ type Transaction struct {
 
 	Id          int64     `json:"id" example:"1"`
 	RequestorId int64     `json:"requestor_id" example:"1"`
-	Nonce       int64     `json:"nonce"`
-	Status      string    `json:"status"`
-	Operation   string    `json:"operation"`
-	CreatedAt   time.Time `json:"created_at"`
+	Nonce       int64     `json:"nonce" example:"1749460653395"`
+	Status      string    `json:"status" example:"success"`
+	Operation   string    `json:"operation" example:"deposit"`
+	CreatedAt   time.Time `json:"created_at" example:"2025-06-09T02:02:31.213543+08:00"`
 
 	TransactionMetaData `json:"metadata"`
 }
@@ -156,7 +157,7 @@ type TransactionsResponseBody = ResponseBody[TransactionsResponseData]
 // @Produce      application/json
 // @Param        user_id   					path      string  true  "username"
 // @Success      200  {object}  TransactionsResponseBody
-// @Failure      500  {object}  ErrorResponseBody
+// @Failure      400  {object}  ErrorResponseBody400
 // @Router       /user/{username}/transactions [get]
 func (h Handlers) Transactions(w http.ResponseWriter, r *http.Request) {
 	userName := r.PathValue("username")
@@ -208,8 +209,8 @@ func (h Handlers) Transactions(w http.ResponseWriter, r *http.Request) {
 }
 
 type CreateWalletRequestBody struct {
-	UserName string `json:"username"`
-	Currency string `json:"currency"`
+	UserName string `json:"username" example:"username1"`
+	Currency string `json:"currency" example:"USD"`
 }
 
 type CreatedWallet struct {
@@ -232,7 +233,8 @@ type CreateWalletResponseBody = ResponseBody[CreateWalletResponseData]
 // @Produce      application/json
 // @Param        request body CreateWalletRequestBody true "Create Wallet Request Body"
 // @Success      200  {object}  CreateWalletResponseBody
-// @Failure      500  {object}  ErrorResponseBody
+// @Failure      400  {object}  ErrorResponseBody400
+// @Failure      500  {object}  ErrorResponseBody500
 // @Router       /wallet [post]
 func (h Handlers) CreateWallet(w http.ResponseWriter, r *http.Request) {
 	form := &CreateWalletRequestBody{}
@@ -261,13 +263,13 @@ type DepositRequestBody struct {
 }
 
 type Ledger struct {
-	Id            int64     `json:"id" example:"1214214"`
+	Id            int64     `json:"id" example:"12222214214"`
 	WalletId      int64     `json:"wallet_id" example:"1021"`
 	TransactionId int64     `json:"transaction_id" example:"1749286345000"`
 	EntryType     string    `json:"entry_type" example:"credit"`
-	Amount        string    `json:"amount" example:"40.22"`
+	Amount        string    `json:"amount" example:"40.1122"`
 	CreatedAt     time.Time `json:"created_at" example:"2025-06-09T02:02:31.213543+08:00"`
-	Balance       string    `json:"balance" example:"2.234"`
+	Balance       string    `json:"balance" example:"2.2324"`
 }
 
 type DepositResponseData struct {
@@ -283,10 +285,12 @@ type DepositResponseBody = ResponseBody[DepositResponseData]
 // @Security     BasicAuth
 // @Accept       application/json
 // @Produce      application/json
-// @Param        wallet_id   					path      string  true  "wallet id"
+// @Param 		 Authorization header string true "Basic Authorization"
+// @Param        wallet_id   					path      string  true  "Wallet Id"
 // @Param        request body DepositRequestBody true "Create Deposit Request Body"
 // @Success      200  {object}  DepositResponseBody
-// @Failure      500  {object}  ErrorResponseBody
+// @Failure      400  {object}  ErrorResponseBody400
+// @Failure      500  {object}  ErrorResponseBody500
 // @Router       /wallet/{wallet_id}/deposit [post]
 func (h Handlers) Deposit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -346,8 +350,33 @@ type WithdrawRequestBody struct {
 	Nonce  int64  `json:"nonce" example:"1749286345000"`
 }
 
+var _ = WithdrawLedger(Ledger{})
+
+type WithdrawLedger struct {
+	Id            int64     `json:"id" example:"12222214214"`
+	WalletId      int64     `json:"wallet_id" example:"1021"`
+	TransactionId int64     `json:"transaction_id" example:"1749286345000"`
+	EntryType     string    `json:"entry_type" example:"debit"`
+	Amount        string    `json:"amount" example:"40.1122"`
+	CreatedAt     time.Time `json:"created_at" example:"2025-06-09T02:02:31.213543+08:00"`
+	Balance       string    `json:"balance" example:"2.2324"`
+}
+
+type WithdrawTransaction struct {
+	Ledgers []WithdrawLedger `json:"ledgers"`
+
+	Id          int64     `json:"id" example:"1"`
+	RequestorId int64     `json:"requestor_id" example:"1"`
+	Nonce       int64     `json:"nonce" example:"1749460653395"`
+	Status      string    `json:"status" example:"success"`
+	Operation   string    `json:"operation" example:"withdraw"`
+	CreatedAt   time.Time `json:"created_at" example:"2025-06-09T02:02:31.213543+08:00"`
+
+	TransactionMetaData `json:"metadata"`
+}
+
 type WithdrawResponseData struct {
-	Transaction `json:"transaction"`
+	WithdrawTransaction `json:"transaction"`
 }
 
 type WithdrawResponseBody = ResponseBody[WithdrawResponseData]
@@ -359,10 +388,12 @@ type WithdrawResponseBody = ResponseBody[WithdrawResponseData]
 // @Security     BasicAuth
 // @Accept       application/json
 // @Produce      application/json
-// @Param        wallet_id   					path      string  true  "wallet id"
+// @Param 		 Authorization header string true "Basic Authorization"
+// @Param        wallet_id   					path      string  true  "Wallet Id"
 // @Param        request body WithdrawRequestBody true "Create Withdraw Request Body"
 // @Success      200  {object}  WithdrawResponseBody
-// @Failure      500  {object}  ErrorResponseBody
+// @Failure      400  {object}  ErrorResponseBody400
+// @Failure      500  {object}  ErrorResponseBody500
 // @Router       /wallet/{wallet_id}/withdraw [post]
 func (h Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -447,10 +478,12 @@ type TransferResponseBody = ResponseBody[TransferResponseData]
 // @Security     BasicAuth
 // @Accept       application/json
 // @Produce      application/json
-// @Param        wallet_id   					path      string  true  "wallet id"
+// @Param 		 Authorization header string true "Basic Authorization"
+// @Param        wallet_id   					path      string  true  "Wallet Id"
 // @Param        request body TransferRequestBody true "Create Transfer Request Body"
 // @Success      200  {object}  TransferResponseBody
-// @Failure      500  {object}  ErrorResponseBody
+// @Failure      400  {object}  ErrorResponseBody400
+// @Failure      500  {object}  ErrorResponseBody500
 // @Router       /wallet/{wallet_id}/transfer [post]
 func (h Handlers) Transfer(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -503,7 +536,7 @@ func (h Handlers) Transfer(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	response_types.WriteOkJsonBody(w, DepositResponseData{
+	response_types.WriteOkJsonBody(w, TransferResponseData{
 		Transaction: Transaction{
 			Ledgers:     ledgers,
 			Id:          transaction.Id,
@@ -547,5 +580,15 @@ type ResponseBody[T any] struct {
 
 type ErrorResponseBody = struct {
 	Data  *int    `json:"data" example:"0"`
+	Error *string `json:"error" example:"general_error"`
+}
+
+type ErrorResponseBody500 = struct {
+	Data  *int    `json:"data" example:"0"`
 	Error *string `json:"error" example:"internal_server_error"`
+}
+
+type ErrorResponseBody400 = struct {
+	Data  *int    `json:"data" example:"0"`
+	Error *string `json:"error" example:"error_bad_request"`
 }

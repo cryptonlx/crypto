@@ -11,7 +11,7 @@ import (
 	"time"
 
 	serverconfig "github.com/cryptonlx/crypto/cmd/server/config"
-	"github.com/cryptonlx/crypto/src/httplog"
+	"github.com/cryptonlx/crypto/src/controllers/httplog"
 
 	usermux "github.com/cryptonlx/crypto/src/controllers/mux/user"
 	userrepo "github.com/cryptonlx/crypto/src/repositories/user"
@@ -24,7 +24,6 @@ import (
 	"github.com/swaggo/http-swagger"
 )
 
-// @securityDefinitions.basic BasicAuth
 func main() {
 	configParams, dbConnPool, err := Init()
 	if err != nil {

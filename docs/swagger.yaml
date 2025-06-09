@@ -2,19 +2,19 @@ definitions:
   github_com_cryptonlx_crypto_src_controllers_mux_user.Ledger:
     properties:
       amount:
-        example: "40.22"
+        example: "40.1122"
         type: string
       balance:
-        example: "2.234"
+        example: "2.2324"
         type: string
       created_at:
-        example: "2022-01-01T00:00:00+00:00"
+        example: "2025-06-09T02:02:31.213543+08:00"
         type: string
       entry_type:
         example: credit
         type: string
       id:
-        example: 1214214
+        example: 12222214214
         type: integer
       transaction_id:
         example: 1749286345000
@@ -26,6 +26,7 @@ definitions:
   github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction:
     properties:
       created_at:
+        example: "2025-06-09T02:02:31.213543+08:00"
         type: string
       id:
         example: 1
@@ -37,22 +38,25 @@ definitions:
       metadata:
         $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.TransactionMetaData'
       nonce:
+        example: 1749460653395
         type: integer
       operation:
+        example: deposit
         type: string
       requestor_id:
         example: 1
         type: integer
       status:
+        example: success
         type: string
     type: object
   github_com_cryptonlx_crypto_src_controllers_mux_user.TransactionMetaData:
     properties:
       amount:
-        example: "1"
+        example: "40.1122"
         type: string
       source_wallet_id:
-        example: 1
+        example: 1021
         type: integer
     type: object
   github_com_cryptonlx_crypto_src_controllers_mux_user.User:
@@ -102,8 +106,10 @@ definitions:
   user.CreateWalletRequestBody:
     properties:
       currency:
+        example: USD
         type: string
       username:
+        example: username1
         type: string
     type: object
   user.CreateWalletResponseBody:
@@ -167,7 +173,16 @@ definitions:
       transaction:
         $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction'
     type: object
-  user.ErrorResponseBody:
+  user.ErrorResponseBody400:
+    properties:
+      data:
+        example: 0
+        type: integer
+      error:
+        example: error_bad_request
+        type: string
+    type: object
+  user.ErrorResponseBody500:
     properties:
       data:
         example: 0
@@ -236,6 +251,30 @@ definitions:
       transaction:
         $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction'
     type: object
+  user.WithdrawLedger:
+    properties:
+      amount:
+        example: "40.1122"
+        type: string
+      balance:
+        example: "2.2324"
+        type: string
+      created_at:
+        example: "2025-06-09T02:02:31.213543+08:00"
+        type: string
+      entry_type:
+        example: debit
+        type: string
+      id:
+        example: 12222214214
+        type: integer
+      transaction_id:
+        example: 1749286345000
+        type: integer
+      wallet_id:
+        example: 1021
+        type: integer
+    type: object
   user.WithdrawRequestBody:
     properties:
       amount:
@@ -257,7 +296,34 @@ definitions:
   user.WithdrawResponseData:
     properties:
       transaction:
-        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction'
+        $ref: '#/definitions/user.WithdrawTransaction'
+    type: object
+  user.WithdrawTransaction:
+    properties:
+      created_at:
+        example: "2025-06-09T02:02:31.213543+08:00"
+        type: string
+      id:
+        example: 1
+        type: integer
+      ledgers:
+        items:
+          $ref: '#/definitions/user.WithdrawLedger'
+        type: array
+      metadata:
+        $ref: '#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.TransactionMetaData'
+      nonce:
+        example: 1749460653395
+        type: integer
+      operation:
+        example: withdraw
+        type: string
+      requestor_id:
+        example: 1
+        type: integer
+      status:
+        example: success
+        type: string
     type: object
 info:
   contact: {}
@@ -281,10 +347,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/user.CreateUserResponseBody'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.ErrorResponseBody400'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/user.ErrorResponseBody'
+            $ref: '#/definitions/user.ErrorResponseBody500'
       summary: Create a new user.
       tags:
       - user
@@ -306,10 +376,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/user.TransactionsResponseBody'
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
-            $ref: '#/definitions/user.ErrorResponseBody'
+            $ref: '#/definitions/user.ErrorResponseBody400'
       summary: Get transactions of user's wallets sorted by newest.
       tags:
       - user
@@ -334,7 +404,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/user.ErrorResponseBody'
+            $ref: '#/definitions/user.ErrorResponseBody500'
       summary: Get balances of user's wallets.
       tags:
       - user
@@ -357,10 +427,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/user.CreateWalletResponseBody'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.ErrorResponseBody400'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/user.ErrorResponseBody'
+            $ref: '#/definitions/user.ErrorResponseBody500'
       summary: Create a new wallet for user.
       tags:
       - wallet
@@ -370,7 +444,12 @@ paths:
       - application/json
       description: Deposit to wallet
       parameters:
-      - description: wallet id
+      - description: Basic Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Wallet Id
         in: path
         name: wallet_id
         required: true
@@ -388,10 +467,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/user.DepositResponseBody'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.ErrorResponseBody400'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/user.ErrorResponseBody'
+            $ref: '#/definitions/user.ErrorResponseBody500'
       security:
       - BasicAuth: []
       summary: Deposit to wallet
@@ -403,7 +486,12 @@ paths:
       - application/json
       description: Transfer to another wallet.
       parameters:
-      - description: wallet id
+      - description: Basic Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Wallet Id
         in: path
         name: wallet_id
         required: true
@@ -421,10 +509,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/user.TransferResponseBody'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.ErrorResponseBody400'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/user.ErrorResponseBody'
+            $ref: '#/definitions/user.ErrorResponseBody500'
       security:
       - BasicAuth: []
       summary: Transfer to another wallet.
@@ -436,7 +528,12 @@ paths:
       - application/json
       description: Withdraw from wallet
       parameters:
-      - description: wallet id
+      - description: Basic Authorization
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Wallet Id
         in: path
         name: wallet_id
         required: true
@@ -454,10 +551,14 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/user.WithdrawResponseBody'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.ErrorResponseBody400'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/user.ErrorResponseBody'
+            $ref: '#/definitions/user.ErrorResponseBody500'
       security:
       - BasicAuth: []
       summary: Withdraw from wallet

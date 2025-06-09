@@ -46,10 +46,16 @@ const docTemplate = `{
                             "$ref": "#/definitions/user.CreateUserResponseBody"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponseBody400"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/user.ErrorResponseBody"
+                            "$ref": "#/definitions/user.ErrorResponseBody500"
                         }
                     }
                 }
@@ -84,10 +90,10 @@ const docTemplate = `{
                             "$ref": "#/definitions/user.TransactionsResponseBody"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/user.ErrorResponseBody"
+                            "$ref": "#/definitions/user.ErrorResponseBody400"
                         }
                     }
                 }
@@ -125,7 +131,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/user.ErrorResponseBody"
+                            "$ref": "#/definitions/user.ErrorResponseBody500"
                         }
                     }
                 }
@@ -162,10 +168,16 @@ const docTemplate = `{
                             "$ref": "#/definitions/user.CreateWalletResponseBody"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponseBody400"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/user.ErrorResponseBody"
+                            "$ref": "#/definitions/user.ErrorResponseBody500"
                         }
                     }
                 }
@@ -192,7 +204,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "wallet id",
+                        "description": "Basic Authorization",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Wallet Id",
                         "name": "wallet_id",
                         "in": "path",
                         "required": true
@@ -214,10 +233,16 @@ const docTemplate = `{
                             "$ref": "#/definitions/user.DepositResponseBody"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponseBody400"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/user.ErrorResponseBody"
+                            "$ref": "#/definitions/user.ErrorResponseBody500"
                         }
                     }
                 }
@@ -244,7 +269,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "wallet id",
+                        "description": "Basic Authorization",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Wallet Id",
                         "name": "wallet_id",
                         "in": "path",
                         "required": true
@@ -266,10 +298,16 @@ const docTemplate = `{
                             "$ref": "#/definitions/user.TransferResponseBody"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponseBody400"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/user.ErrorResponseBody"
+                            "$ref": "#/definitions/user.ErrorResponseBody500"
                         }
                     }
                 }
@@ -296,7 +334,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "wallet id",
+                        "description": "Basic Authorization",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Wallet Id",
                         "name": "wallet_id",
                         "in": "path",
                         "required": true
@@ -318,10 +363,16 @@ const docTemplate = `{
                             "$ref": "#/definitions/user.WithdrawResponseBody"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.ErrorResponseBody400"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/user.ErrorResponseBody"
+                            "$ref": "#/definitions/user.ErrorResponseBody500"
                         }
                     }
                 }
@@ -334,15 +385,15 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "type": "string",
-                    "example": "40.22"
+                    "example": "40.1122"
                 },
                 "balance": {
                     "type": "string",
-                    "example": "2.234"
+                    "example": "2.2324"
                 },
                 "created_at": {
                     "type": "string",
-                    "example": "2022-01-01T00:00:00+00:00"
+                    "example": "2025-06-09T02:02:31.213543+08:00"
                 },
                 "entry_type": {
                     "type": "string",
@@ -350,7 +401,7 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer",
-                    "example": 1214214
+                    "example": 12222214214
                 },
                 "transaction_id": {
                     "type": "integer",
@@ -366,7 +417,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "created_at": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "2025-06-09T02:02:31.213543+08:00"
                 },
                 "id": {
                     "type": "integer",
@@ -382,17 +434,20 @@ const docTemplate = `{
                     "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.TransactionMetaData"
                 },
                 "nonce": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 1749460653395
                 },
                 "operation": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "deposit"
                 },
                 "requestor_id": {
                     "type": "integer",
                     "example": 1
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "success"
                 }
             }
         },
@@ -401,11 +456,11 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "type": "string",
-                    "example": "1"
+                    "example": "40.1122"
                 },
                 "source_wallet_id": {
                     "type": "integer",
-                    "example": 1
+                    "example": 1021
                 }
             }
         },
@@ -477,10 +532,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "currency": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "USD"
                 },
                 "username": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "username1"
                 }
             }
         },
@@ -573,7 +630,20 @@ const docTemplate = `{
                 }
             }
         },
-        "user.ErrorResponseBody": {
+        "user.ErrorResponseBody400": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "error": {
+                    "type": "string",
+                    "example": "error_bad_request"
+                }
+            }
+        },
+        "user.ErrorResponseBody500": {
             "type": "object",
             "properties": {
                 "data": {
@@ -675,6 +745,39 @@ const docTemplate = `{
                 }
             }
         },
+        "user.WithdrawLedger": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "40.1122"
+                },
+                "balance": {
+                    "type": "string",
+                    "example": "2.2324"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2025-06-09T02:02:31.213543+08:00"
+                },
+                "entry_type": {
+                    "type": "string",
+                    "example": "debit"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 12222214214
+                },
+                "transaction_id": {
+                    "type": "integer",
+                    "example": 1749286345000
+                },
+                "wallet_id": {
+                    "type": "integer",
+                    "example": 1021
+                }
+            }
+        },
         "user.WithdrawRequestBody": {
             "type": "object",
             "properties": {
@@ -705,7 +808,45 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "transaction": {
-                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.Transaction"
+                    "$ref": "#/definitions/user.WithdrawTransaction"
+                }
+            }
+        },
+        "user.WithdrawTransaction": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2025-06-09T02:02:31.213543+08:00"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "ledgers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/user.WithdrawLedger"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/github_com_cryptonlx_crypto_src_controllers_mux_user.TransactionMetaData"
+                },
+                "nonce": {
+                    "type": "integer",
+                    "example": 1749460653395
+                },
+                "operation": {
+                    "type": "string",
+                    "example": "withdraw"
+                },
+                "requestor_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
                 }
             }
         }
