@@ -69,6 +69,8 @@ func main() {
 		}
 		if err := server.ListenAndServe(); err != nil {
 			log.Printf("ListenAndServe err %v\n", err)
+
+			os.Exit(1)
 		}
 	}()
 

@@ -25,21 +25,21 @@ func TestE2E(t *testing.T) {
 		n = 1
 	} else {
 		_n, _err := strconv.Atoi(_n)
-		n = _n
 		if _err != nil {
 			panic(_err)
 		}
+		n = _n
 	}
 
 	var wg sync.WaitGroup
 	wg.Add(n)
 	for range n {
 		go func() {
+			defer wg.Done()
 			client, err := testclient.NewClient(serverUrl)
 			if err != nil {
 				panic(err)
 			}
-			defer wg.Done()
 			Exec(t, client)
 		}()
 	}
