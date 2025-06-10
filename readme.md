@@ -38,7 +38,7 @@ cd crypto
 # set hook
 cp ./pre-commit.sample .git/hooks/pre-commit
 # copy env
-cp .env .env.sample
+cp .env.sample .env
 ```
 
 #### PostgreSQL Instance
@@ -166,7 +166,7 @@ Go to http://localhost:8080/swagger/index.html after running local server.
 5. **[API-USER-TXH]** Get user's transaction history sorted by newest.\
    `/GET /user/{username}/transactions`
     - Get transactions requested by user. Ledgers of other user's wallet will be omitted.
-    - Includes ledgers of user's wallet not recorded from a transaction requested by the user.
+    - Includes ledgers of user's wallet recorded from transactions requested by other users.
 
 6. **[API-USER-NEW]** Create new user.\
    `/POST /user`
