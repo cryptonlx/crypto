@@ -394,7 +394,7 @@ type WithdrawResponseBody = ResponseBody[WithdrawResponseData]
 // @Success      200  {object}  WithdrawResponseBody
 // @Failure      400  {object}  ErrorResponseBody400
 // @Failure      500  {object}  ErrorResponseBody500
-// @Router       /wallet/{wallet_id}/withdraw [post]
+// @Router       /wallet/{wallet_id}/withdrawal [post]
 func (h Handlers) Withdraw(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	basicAuthB64, _ := ctx.Value("BASIC_AUTH").(string)

@@ -313,7 +313,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/wallet/{wallet_id}/withdraw": {
+        "/wallet/{wallet_id}/withdrawal": {
             "post": {
                 "security": [
                     {

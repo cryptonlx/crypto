@@ -522,7 +522,7 @@ paths:
       summary: Transfer to another wallet.
       tags:
       - wallet
-  /wallet/{wallet_id}/withdraw:
+  /wallet/{wallet_id}/withdrawal:
     post:
       consumes:
       - application/json

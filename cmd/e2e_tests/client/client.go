@@ -136,7 +136,7 @@ type WithdrawResponseData struct {
 type WithdrawResponseBody = ResponseBody[WithdrawResponseData]
 
 func (c *Client) Withdraw(username string, walletId int64, amount decimal.Decimal) (WithdrawResponseBody, int, error) {
-	baseUrl := c.serverUrl + fmt.Sprintf("/wallet/%d/withdraw", walletId)
+	baseUrl := c.serverUrl + fmt.Sprintf("/wallet/%d/withdrawal", walletId)
 	requestBody := map[string]interface{}{
 		"amount": amount.String(),
 		"nonce":  time.Now().UnixMilli(),
